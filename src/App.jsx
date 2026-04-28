@@ -36,8 +36,9 @@ const LoadingPage = () => (
 const INTERNO = [ROLES.MASTER, ROLES.ASSESSOR];
 
 // Wrapper enxuto — reduz duplicação do <ProtectedRoute>…</ProtectedRoute>
-const Guard = ({ element, roles }) => (
-  <ProtectedRoute roles={roles}>{element}</ProtectedRoute>
+// `ownerOnly`: cliente só acessa o próprio :id da URL (assessor/master passam).
+const Guard = ({ element, roles, ownerOnly }) => (
+  <ProtectedRoute roles={roles} ownerOnly={ownerOnly}>{element}</ProtectedRoute>
 );
 
 function App() {
@@ -48,16 +49,16 @@ function App() {
         <Routes>
           <Route path="/" element={<Login />} />
 
-          <Route path="/dashboard" element={<Guard element={<Dashboard />} />} />
-          <Route path="/cliente/:id" element={<Guard element={<ClienteFicha />} />} />
-          <Route path="/cliente/:id/objetivos" element={<Guard element={<Objetivos />} />} />
-          <Route path="/objetivo/:clienteId/:objetivoIndex" element={<Guard element={<ObjetivoDetalhes />} />} />
-          <Route path="/cliente/:id/carteira" element={<Guard element={<Carteira />} />} />
-          <Route path="/cliente/:id/fluxo" element={<Guard element={<FluxoMensal />} />} />
-          <Route path="/cliente/:id/diagnostico" element={<Guard element={<Diagnostico />} />} />
-          <Route path="/cliente/:id/simulador" element={<Guard element={<Simulador />} />} />
-          <Route path="/cliente/:id/extrato" element={<Guard element={<Extrato />} />} />
-          <Route path="/cliente/:id/ajustes" element={<Guard element={<AjustesCarteira />} />} />
+          <Route path="/dashboard" element={<Guard roles={INTERNO} element={<Dashboard />} />} />
+          <Route path="/cliente/:id" element={<Guard ownerOnly element={<ClienteFicha />} />} />
+          <Route path="/cliente/:id/objetivos" element={<Guard ownerOnly element={<Objetivos />} />} />
+          <Route path="/objetivo/:clienteId/:objetivoIndex" element={<Guard ownerOnly element={<ObjetivoDetalhes />} />} />
+          <Route path="/cliente/:id/carteira" element={<Guard ownerOnly element={<Carteira />} />} />
+          <Route path="/cliente/:id/fluxo" element={<Guard ownerOnly element={<FluxoMensal />} />} />
+          <Route path="/cliente/:id/diagnostico" element={<Guard ownerOnly element={<Diagnostico />} />} />
+          <Route path="/cliente/:id/simulador" element={<Guard ownerOnly element={<Simulador />} />} />
+          <Route path="/cliente/:id/extrato" element={<Guard ownerOnly element={<Extrato />} />} />
+          <Route path="/cliente/:id/ajustes" element={<Guard ownerOnly element={<AjustesCarteira />} />} />
 
           <Route
             path="/vencimentos"
