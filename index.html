@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+
+    <!-- Cache: o HTML nunca cacheia para garantir entrega imediata de novas versões.
+         Os assets JS/CSS já têm hash no nome e podem cachear forte (firebase.json). -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content="Porto Invest — Plataforma de planejamento financeiro e gestão de patrimônio." />
+    <meta name="theme-color" content="#0D1321" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="robots" content="noindex, nofollow" />
+
+    <!-- PWA (Progressive Web App) — permite "instalar" o site como app
+         na tela inicial do celular (Android/iOS). -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="application-name" content="Porto Invest" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Porto Invest" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="msapplication-TileColor" content="#0D1321" />
+    <meta name="msapplication-tap-highlight" content="no" />
+
+    <!-- Open Graph (link sharing em redes sociais / WhatsApp) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Porto Invest" />
+    <meta property="og:title" content="Porto Invest" />
+    <meta property="og:description" content="Plataforma de planejamento financeiro e gestão de patrimônio." />
+    <meta property="og:image" content="/apple-touch-icon.png" />
+    <meta property="og:locale" content="pt_BR" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Porto Invest" />
+    <meta name="twitter:description" content="Plataforma de planejamento financeiro e gestão de patrimônio." />
+
+    <!-- Preconnect: abre conexão TLS com Firebase antes do JS principal executar.
+         Economia típica: 150–400ms no primeiro fetch de auth/firestore. -->
+    <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin />
+    <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin />
+    <link rel="preconnect" href="https://firebaseinstallations.googleapis.com" crossorigin />
+    <link rel="dns-prefetch" href="https://www.googleapis.com" />
+    <link rel="dns-prefetch" href="https://securetoken.googleapis.com" />
+
+    <title>Porto Invest</title>
+
+    <!-- Auto-recovery em duas camadas:
+         1) Falha ao carregar JS/CSS → reload imediato
+         2) #root vazio ou preso em "carregando…" após 9s → reload forçado
+            com cache buster. Cobre o caso clássico de browser exibindo HTML
+            antigo apontando pra hashes que mudaram. -->
+    <script>
+      (function () {
+        var KEY = 'pi-reload-tried';
+
+        function attemptReload(mode) {
+          if (sessionStorage.getItem(KEY)) return;
+          sessionStorage.setItem(KEY, mode || '1');
+          // Cache-buster no reload pra forçar re-fetch do HTML
+          var url = new URL(window.location.href);
+          url.searchParams.set('_pi_v', Date.now().toString(36));
+          window.location.replace(url.toString());
+        }
+
+        // Camada 1: erro de carregamento de asset
+        window.addEventListener('error', function (e) {
+          var t = e && e.target;
+          if (!t) return;
+          var tag = t.tagName;
+          if ((tag === 'SCRIPT' || tag === 'LINK') && t.src !== window.location.href) {
+            attemptReload('asset-fail');
+          }
+        }, true);
+
+        // Camada 2: watchdog — se o root ficar vazio ou preso em "carregando…"
+        // por 9s, força reload (com cache buster).
+        function watchdog() {
+          if (sessionStorage.getItem(KEY)) return;
+          var root = document.getElementById('root');
+          if (!root) return attemptReload('no-root');
+          var txt = (root.textContent || '').trim();
+          var stuck = root.childNodes.length === 0
+                   || /^carregando[…\.]*$/i.test(txt);
+          if (stuck) attemptReload('mount-timeout');
+        }
+        setTimeout(watchdog, 9000);
+
+        // Limpa flag após 12s de execução estável
+        setTimeout(function () { sessionStorage.removeItem(KEY); }, 12000);
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

@@ -1,0 +1,211 @@
+/* ═══════════════════════════════════════════════════════════════
+   LoadingScreen + Skeleton — pure CSS, sem dependências
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ────────────────────────────────────────────────────────────────
+   Loading Screen — fullscreen com logo + dots
+   ──────────────────────────────────────────────────────────────── */
+.pi-loading-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #0D1321;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: -apple-system, "SF Pro Display", "Helvetica Neue", sans-serif;
+  overflow: hidden;
+}
+
+/* Glow dourado pulsante de fundo */
+.pi-loading-glow {
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle,
+    rgba(240, 162, 2, 0.18) 0%,
+    rgba(240, 162, 2, 0.05) 35%,
+    transparent 70%);
+  filter: blur(50px);
+  animation: pi-loading-pulse 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes pi-loading-pulse {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50%      { opacity: 1;   transform: scale(1.08); }
+}
+
+.pi-loading-content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+  z-index: 1;
+}
+
+.pi-loading-logo {
+  width: 80px;
+  height: 80px;
+  filter: drop-shadow(0 8px 28px rgba(240, 162, 2, 0.35));
+  animation: pi-loading-spin 1.6s linear infinite;
+}
+
+@keyframes pi-loading-spin {
+  to { transform: rotate(360deg); }
+}
+
+.pi-loading-logo text {
+  /* Mantém o "Pi" estático mesmo com o SVG girando */
+  transform-origin: 32px 32px;
+  animation: pi-loading-counterspin 1.6s linear infinite;
+}
+
+@keyframes pi-loading-counterspin {
+  to { transform: rotate(-360deg); }
+}
+
+.pi-loading-text {
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #8aa0bb;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+}
+
+.pi-loading-dot {
+  display: inline-block;
+  animation: pi-loading-blink 1.4s ease-in-out infinite both;
+  color: #FFB20F;
+  margin: 0 0.5px;
+}
+.pi-loading-dot:nth-child(1) { animation-delay: 0s; }
+.pi-loading-dot:nth-child(2) { animation-delay: 0.18s; }
+.pi-loading-dot:nth-child(3) { animation-delay: 0.36s; }
+
+@keyframes pi-loading-blink {
+  0%, 60%, 100% { opacity: 0.2; transform: translateY(0); }
+  30%           { opacity: 1;   transform: translateY(-2px); }
+}
+
+/* ────────────────────────────────────────────────────────────────
+   Skeleton — shimmer animado
+   ──────────────────────────────────────────────────────────────── */
+.pi-skeleton {
+  display: inline-block;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    rgba(255, 255, 255, 0.06) 100%);
+  border-radius: 8px;
+  vertical-align: middle;
+}
+
+.pi-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.06) 50%,
+    transparent 100%);
+  animation: pi-skeleton-shimmer 1.6s ease-in-out infinite;
+  transform: translateX(-100%);
+}
+
+@keyframes pi-skeleton-shimmer {
+  to { transform: translateX(100%); }
+}
+
+/* Variante "linha" — texto/título */
+.pi-skeleton-line {
+  display: block;
+  height: 14px;
+  margin: 6px 0;
+  border-radius: 6px;
+}
+
+/* Variante "circle" — avatar/ícone */
+.pi-skeleton-circle {
+  border-radius: 50% !important;
+}
+
+/* ────────────────────────────────────────────────────────────────
+   Compatibilidade — sobrescreve "carregando..." plain antigo
+   por loading screen moderna globalmente.
+   ──────────────────────────────────────────────────────────────── */
+
+/* page-loading antigo do App.jsx — visual mais bonito */
+.page-loading {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #0D1321;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  font-family: -apple-system, "SF Pro Display", sans-serif;
+}
+.page-loading > span {
+  font-size: 11px !important;
+  letter-spacing: 0.20em !important;
+  text-transform: uppercase;
+  color: rgba(240, 162, 2, 0.85) !important;
+  font-weight: 600 !important;
+  position: relative;
+  padding-left: 28px;
+}
+/* Spinner antes do texto "carregando…" */
+.page-loading > span::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid rgba(240, 162, 2, 0.20);
+  border-top-color: #FFB20F;
+  animation: pi-loading-rotate 0.9s linear infinite;
+}
+@keyframes pi-loading-rotate {
+  to { transform: translateY(-50%) rotate(360deg); }
+}
+
+/* ProtectedRoute "Carregando..." plain — também ganha spinner */
+.protected-loading {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0D1321;
+}
+.protected-loading-text {
+  font-size: 11px !important;
+  letter-spacing: 0.20em !important;
+  text-transform: uppercase !important;
+  color: rgba(240, 162, 2, 0.85) !important;
+  font-weight: 600 !important;
+  position: relative;
+  padding-left: 28px;
+  font-family: -apple-system, "SF Pro Display", sans-serif;
+}
+.protected-loading-text::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid rgba(240, 162, 2, 0.20);
+  border-top-color: #FFB20F;
+  animation: pi-loading-rotate 0.9s linear infinite;
+}

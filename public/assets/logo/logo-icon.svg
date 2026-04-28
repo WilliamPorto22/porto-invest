@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <!-- PI monogram — P navy + i teal — conteúdo centralizado no viewBox -->
+  <defs>
+    <linearGradient id="pGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2C4A6E"/>
+      <stop offset="1" stop-color="#16263D"/>
+    </linearGradient>
+    <linearGradient id="iGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#34A394"/>
+      <stop offset="1" stop-color="#1F7A6C"/>
+    </linearGradient>
+  </defs>
+  <!-- Grupo centralizado: extensão do conteúdo é 93px (de x=17.5 até x=110.5),
+       center 64 == center do viewBox 128x128 -->
+  <g>
+    <!-- P -->
+    <path d="M17.5 18 L17.5 110 L33.5 110 L33.5 74 L55.5 74 C75.5 74 89.5 62 89.5 46 C89.5 30 75.5 18 55.5 18 Z
+             M33.5 33 L55.5 33 C65.5 33 72.5 38 72.5 46 C72.5 54 65.5 59 55.5 59 L33.5 59 Z"
+          fill="url(#pGrad)"/>
+    <!-- i -->
+    <rect x="93.5" y="46" width="17" height="64" rx="8.5" fill="url(#iGrad)"/>
+    <circle cx="102" cy="30" r="9.5" fill="url(#iGrad)"/>
+  </g>
+</svg>

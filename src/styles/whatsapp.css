@@ -1,0 +1,119 @@
+/* ═══════════════════════════════════════════════════════════════
+   WhatsAppButton — Pílula flutuante premium
+   ═══════════════════════════════════════════════════════════════ */
+
+.pi-whatsapp {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 9000;
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  height: 52px;
+  padding: 0 16px 0 16px;
+  background: linear-gradient(135deg, #25D366 0%, #1da851 100%);
+  border-radius: 999px;
+  color: #fff;
+  text-decoration: none;
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  box-shadow:
+    0 8px 28px rgba(37, 211, 102, 0.35),
+    0 4px 14px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+  cursor: pointer;
+  overflow: hidden;
+  transition:
+    transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.25s ease,
+    padding-right 0.3s ease;
+}
+
+.pi-whatsapp:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow:
+    0 12px 36px rgba(37, 211, 102, 0.5),
+    0 6px 18px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.12) inset;
+}
+
+.pi-whatsapp:active {
+  transform: translateY(-1px) scale(1);
+}
+
+/* Pulse atrás do ícone */
+.pi-whatsapp-pulse {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.35);
+  animation: pi-whatsapp-pulse 2s ease-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+@keyframes pi-whatsapp-pulse {
+  0%   { transform: translate(-50%, -50%) scale(0.8); opacity: 0.6; }
+  70%  { transform: translate(-50%, -50%) scale(2.2); opacity: 0; }
+  100% { transform: translate(-50%, -50%) scale(2.2); opacity: 0; }
+}
+
+.pi-whatsapp-icon {
+  width: 22px;
+  height: 22px;
+  position: relative;
+  z-index: 1;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.2));
+  flex-shrink: 0;
+}
+
+.pi-whatsapp-label {
+  position: relative;
+  z-index: 1;
+  margin-left: 10px;
+  white-space: nowrap;
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-width 0.32s ease, opacity 0.2s ease, margin-left 0.32s ease;
+}
+
+.pi-whatsapp:hover .pi-whatsapp-label,
+.pi-whatsapp:focus-visible .pi-whatsapp-label {
+  max-width: 220px;
+  opacity: 1;
+  margin-left: 10px;
+}
+
+/* Em mobile: só ícone + sobe acima da bottom tab bar (60px) */
+@media (max-width: 900px) {
+  .pi-whatsapp {
+    right: 16px;
+    bottom: calc(60px + env(safe-area-inset-bottom, 0px) + 12px);
+    height: 48px;
+    width: 48px;
+    padding: 0;
+    border-radius: 50%;
+    justify-content: center;
+  }
+  .pi-whatsapp-label {
+    display: none;
+  }
+  .pi-whatsapp-pulse {
+    left: 50%;
+  }
+}
+
+/* Quando o botão flutuante já existe (floating-nav-btn no canto direito),
+   sobe o WhatsApp pra não colidir */
+@media (min-width: 901px) {
+  body:has(.floating-nav-btn.is-right) .pi-whatsapp {
+    bottom: 88px;
+  }
+}

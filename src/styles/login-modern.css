@@ -1,0 +1,350 @@
+/* ═══════════════════════════════════════════════════════════════
+   LOGIN MODERN — Premium "private banking"
+   Apenas overrides estéticos. Comportamento e estrutura intactos.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ────────────────────────────────────────────────────────────────
+   Container — fundo com luz radial dourada animada
+   Ancorado no topo com padding-top responsivo: em monitores altos,
+   evita que o card "afunde" pro fundo da tela; em telas curtas
+   (laptops 13", landscape mobile) mantém respiro mínimo.
+   ──────────────────────────────────────────────────────────────── */
+.login-container {
+  min-height: 100vh;
+  background: #0D1321 !important;
+  position: relative;
+  overflow: hidden;
+  align-items: flex-start !important;
+  padding-top: clamp(48px, 9vh, 120px) !important;
+  padding-bottom: 32px !important;
+}
+
+@media (max-width: 480px) {
+  .login-container {
+    padding-top: clamp(32px, 6vh, 64px) !important;
+  }
+}
+
+/* Glow dourado pulsante no canto superior direito */
+.login-container::before {
+  content: "";
+  position: absolute;
+  top: -300px;
+  right: -250px;
+  width: 700px;
+  height: 700px;
+  background: radial-gradient(circle,
+    rgba(240, 162, 2, 0.18) 0%,
+    rgba(240, 162, 2, 0.05) 35%,
+    transparent 70%);
+  filter: blur(60px);
+  pointer-events: none;
+  animation: pi-login-glow 12s ease-in-out infinite alternate;
+}
+
+/* Glow azul mais sutil no canto inferior esquerdo (contraste) */
+.login-container::after {
+  content: "";
+  position: absolute;
+  bottom: -250px;
+  left: -200px;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle,
+    rgba(25, 130, 196, 0.14) 0%,
+    rgba(25, 130, 196, 0.04) 40%,
+    transparent 70%);
+  filter: blur(70px);
+  pointer-events: none;
+  animation: pi-login-glow 14s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes pi-login-glow {
+  0%   { opacity: 0.7; transform: translate(0, 0) scale(1); }
+  100% { opacity: 1;   transform: translate(-30px, 20px) scale(1.08); }
+}
+
+/* Padrão de grade sutil em toda a tela (textura tech) */
+.login-container > * {
+  position: relative;
+  z-index: 1;
+}
+
+.login-wrapper {
+  max-width: 420px !important;
+  animation: pi-login-fade-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes pi-login-fade-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ────────────────────────────────────────────────────────────────
+   Logo section — glow dourado + spacing refinado
+   ──────────────────────────────────────────────────────────────── */
+.login-logo-section {
+  margin-bottom: 36px !important;
+}
+
+.login-logo-content svg,
+.login-logo-content img {
+  filter: drop-shadow(0 8px 24px rgba(240, 162, 2, 0.25));
+}
+
+/* Eyebrow "Assessoria de Investimentos" mais sofisticado */
+.login-logo-content > div:last-child {
+  font-size: 10.5px !important;
+  letter-spacing: 0.24em !important;
+  color: rgba(240, 162, 2, 0.75) !important;
+  font-weight: 600 !important;
+}
+
+/* ────────────────────────────────────────────────────────────────
+   Card — glassmorphism premium
+   ──────────────────────────────────────────────────────────────── */
+.login-card {
+  background:
+    radial-gradient(120% 80% at 100% 0%,
+      rgba(240, 162, 2, 0.06) 0%,
+      transparent 55%),
+    linear-gradient(160deg,
+      rgba(29, 45, 68, 0.85) 0%,
+      rgba(13, 19, 33, 0.85) 100%) !important;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 0.5px solid rgba(240, 162, 2, 0.18) !important;
+  border-radius: 22px !important;
+  padding: 36px 32px !important;
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.55),
+    0 0 36px rgba(240, 162, 2, 0.08),
+    0 0 0 1px rgba(255, 255, 255, 0.02) inset,
+    0 1px 0 rgba(255, 255, 255, 0.04) inset !important;
+}
+
+@media (max-width: 480px) {
+  .login-card {
+    padding: 28px 22px !important;
+    border-radius: 18px !important;
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────
+   Header — tipografia mais marcante
+   ──────────────────────────────────────────────────────────────── */
+.login-header {
+  margin-bottom: 28px !important;
+}
+
+.login-title {
+  font-size: 22px !important;
+  font-weight: 300 !important;
+  letter-spacing: -0.015em !important;
+  color: #F0EBD8 !important;
+  margin-bottom: 8px !important;
+}
+
+.login-subtitle {
+  font-size: 12.5px !important;
+  color: #8aa0bb !important;
+  line-height: 1.6 !important;
+  letter-spacing: 0.01em !important;
+}
+
+/* ────────────────────────────────────────────────────────────────
+   Inputs — height 46px, focus dourado, gradiente sutil
+   ──────────────────────────────────────────────────────────────── */
+.login-card .form-group {
+  margin-bottom: 16px;
+}
+
+.login-card .form-label {
+  font-size: 10.5px !important;
+  letter-spacing: 0.18em !important;
+  text-transform: uppercase !important;
+  color: #8aa0bb !important;
+  font-weight: 600 !important;
+  margin-bottom: 8px !important;
+  display: block;
+}
+
+.login-card .form-input {
+  height: 46px;
+  padding: 0 16px !important;
+  background:
+    linear-gradient(160deg,
+      rgba(255, 255, 255, 0.04) 0%,
+      rgba(255, 255, 255, 0.02) 100%) !important;
+  border: 0.5px solid rgba(116, 140, 171, 0.30) !important;
+  border-radius: 12px !important;
+  color: #F0EBD8 !important;
+  font-size: 14px !important;
+  letter-spacing: 0.01em;
+  transition: border-color 0.18s ease, background 0.18s ease,
+              box-shadow 0.18s ease !important;
+}
+
+.login-card .form-input:focus {
+  outline: none !important;
+  border-color: rgba(240, 162, 2, 0.55) !important;
+  background:
+    linear-gradient(160deg,
+      rgba(240, 162, 2, 0.06) 0%,
+      rgba(240, 162, 2, 0.02) 100%) !important;
+  box-shadow:
+    0 0 0 3px rgba(240, 162, 2, 0.10),
+    0 4px 12px rgba(0, 0, 0, 0.20) !important;
+}
+
+.login-card .form-input::placeholder {
+  color: rgba(116, 140, 171, 0.40);
+  font-weight: 400;
+}
+
+/* ────────────────────────────────────────────────────────────────
+   Botão "Entrar" — gradiente dourado premium
+   ──────────────────────────────────────────────────────────────── */
+.login-card .login-button-wrapper {
+  margin-top: 26px !important;
+}
+
+.login-card .btn-primary {
+  width: 100%;
+  height: 50px;
+  background: linear-gradient(135deg, #F0A202 0%, #FFB20F 100%) !important;
+  border: none !important;
+  border-radius: 12px !important;
+  color: #0D1321 !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.16em !important;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease,
+              filter 0.18s ease !important;
+  box-shadow:
+    0 6px 18px rgba(240, 162, 2, 0.18),
+    0 0 0 1px rgba(255, 255, 255, 0.06) inset !important;
+}
+
+.login-card .btn-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow:
+    0 10px 24px rgba(240, 162, 2, 0.28),
+    0 0 0 1px rgba(255, 255, 255, 0.10) inset !important;
+  filter: brightness(1.04);
+}
+
+.login-card .btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.login-card .btn-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ────────────────────────────────────────────────────────────────
+   Toggle de visibilidade da senha (olho)
+   ──────────────────────────────────────────────────────────────── */
+.login-pass-wrap {
+  position: relative;
+  display: block;
+}
+
+.login-pass-wrap .form-input {
+  padding-right: 46px !important;
+}
+
+.login-pass-toggle {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: rgba(116, 140, 171, 0.75);
+  cursor: pointer;
+  transition: color 0.16s ease, background 0.16s ease;
+}
+
+.login-pass-toggle:hover:not(:disabled) {
+  color: #F0A202;
+  background: rgba(240, 162, 2, 0.06);
+}
+
+.login-pass-toggle:focus-visible {
+  outline: 2px solid rgba(240, 162, 2, 0.45);
+  outline-offset: 1px;
+}
+
+.login-pass-toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ────────────────────────────────────────────────────────────────
+   Esqueci senha — pill discreto, centralizado
+   ──────────────────────────────────────────────────────────────── */
+.login-forgot-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 14px;
+}
+
+.login-forgot-btn {
+  background: transparent;
+  border: none;
+  color: rgba(240, 162, 2, 0.85);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  font-family: inherit;
+  border-radius: 999px;
+  padding: 8px 14px;
+  transition: color 0.18s ease, background 0.18s ease;
+}
+
+.login-forgot-btn:hover:not(:disabled) {
+  background: rgba(240, 162, 2, 0.08);
+  color: #FFB20F;
+}
+
+.login-forgot-btn:focus-visible {
+  outline: 2px solid rgba(240, 162, 2, 0.45);
+  outline-offset: 1px;
+}
+
+.login-forgot-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ────────────────────────────────────────────────────────────────
+   Footer — "Acesso seguro · Dados protegidos"
+   ──────────────────────────────────────────────────────────────── */
+.login-footer {
+  font-size: 9.5px !important;
+  letter-spacing: 0.20em !important;
+  color: rgba(116, 140, 171, 0.70) !important;
+  margin-top: 24px !important;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+/* Adiciona indicador 🔒 sutil antes do texto */
+.login-footer::before {
+  content: "🔒  ";
+  font-size: 11px;
+  margin-right: 4px;
+  opacity: 0.75;
+  letter-spacing: 0;
+}

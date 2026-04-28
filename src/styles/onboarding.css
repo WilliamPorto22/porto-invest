@@ -1,0 +1,217 @@
+/* ═══════════════════════════════════════════════════════════════
+   OnboardingCliente — Boas-vindas em 4 telas
+   Estilo: dark premium, glassmorphism, animações suaves
+   ═══════════════════════════════════════════════════════════════ */
+
+.pi-onb-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: radial-gradient(120% 100% at 50% 0%,
+    rgba(13, 19, 33, 0.85) 0%,
+    rgba(0, 0, 0, 0.92) 100%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  animation: pi-onb-fade-in 0.32s ease-out;
+}
+
+.pi-onb-overlay.pi-onb-closing {
+  animation: pi-onb-fade-out 0.28s ease-in forwards;
+}
+
+@keyframes pi-onb-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes pi-onb-fade-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+.pi-onb-card {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  padding: 40px 36px 32px;
+  background:
+    radial-gradient(120% 100% at 100% 0%,
+      rgba(240, 162, 2, 0.16) 0%,
+      rgba(240, 162, 2, 0.04) 35%,
+      transparent 65%),
+    radial-gradient(80% 60% at 0% 100%,
+      rgba(25, 130, 196, 0.14) 0%,
+      transparent 60%),
+    linear-gradient(160deg, #1a2747 0%, #131e36 45%, #0d1321 100%);
+  border: 0.5px solid rgba(240, 162, 2, 0.22);
+  border-radius: 22px;
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.6),
+    0 0 60px rgba(240, 162, 2, 0.12),
+    0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+  text-align: center;
+  animation: pi-onb-card-in 0.42s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes pi-onb-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* "Pular" no canto superior direito */
+.pi-onb-skip {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  background: transparent;
+  border: 0.5px solid rgba(116, 140, 171, 0.30);
+  color: #748CAB;
+  font-size: 11px;
+  font-family: inherit;
+  letter-spacing: 0.06em;
+  padding: 6px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.pi-onb-skip:hover {
+  color: #F0EBD8;
+  border-color: rgba(240, 162, 2, 0.4);
+  background: rgba(240, 162, 2, 0.08);
+}
+
+/* Ícone grande no topo */
+.pi-onb-icone {
+  font-size: 56px;
+  line-height: 1;
+  margin-bottom: 18px;
+  filter: drop-shadow(0 4px 18px rgba(240, 162, 2, 0.35));
+}
+
+.pi-onb-eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #FFB20F;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.pi-onb-titulo {
+  font-size: 26px;
+  font-weight: 300;
+  color: #F0EBD8;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin-bottom: 14px;
+}
+
+.pi-onb-desc {
+  font-size: 14px;
+  color: #b0bcd0;
+  line-height: 1.65;
+  margin-bottom: 28px;
+  max-width: 360px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Dots de progresso */
+.pi-onb-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+.pi-onb-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+.pi-onb-dot:hover {
+  background: rgba(240, 162, 2, 0.5);
+}
+.pi-onb-dot-active {
+  background: #F0A202;
+  width: 22px;
+  border-radius: 999px;
+  box-shadow: 0 0 12px rgba(240, 162, 2, 0.5);
+}
+
+/* Botões */
+.pi-onb-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.pi-onb-spacer { flex: 1; }
+
+.pi-onb-btn {
+  flex: 1;
+  padding: 12px 18px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-family: inherit;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 0.5px solid;
+}
+
+.pi-onb-btn-ghost {
+  background: transparent;
+  border-color: rgba(116, 140, 171, 0.35);
+  color: #748CAB;
+  flex: 0 0 auto;
+  padding: 12px 16px;
+}
+.pi-onb-btn-ghost:hover {
+  color: #F0EBD8;
+  border-color: rgba(240, 162, 2, 0.4);
+}
+
+.pi-onb-btn-primary {
+  background: linear-gradient(135deg, #F0A202 0%, #FFB20F 100%);
+  border-color: rgba(240, 162, 2, 0.5);
+  color: #0D1321;
+  font-weight: 600;
+  box-shadow: 0 4px 18px rgba(240, 162, 2, 0.35);
+}
+.pi-onb-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 26px rgba(240, 162, 2, 0.5);
+}
+.pi-onb-btn-primary:active {
+  transform: translateY(0);
+}
+
+/* Mobile */
+@media (max-width: 599px) {
+  .pi-onb-card {
+    padding: 32px 24px 24px;
+    border-radius: 18px;
+  }
+  .pi-onb-icone { font-size: 48px; }
+  .pi-onb-titulo { font-size: 22px; }
+  .pi-onb-desc { font-size: 13px; }
+  .pi-onb-skip { top: 10px; right: 12px; }
+}
+
+/* Animação de transição entre telas (key={step} no card) */
+.pi-onb-card {
+  /* o key={step} faz o card re-mount; a animação re-roda a cada transição */
+}

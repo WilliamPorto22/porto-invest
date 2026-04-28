@@ -1,0 +1,430 @@
+/* ═══════════════════════════════════════════════════════════════
+   WEALTHTRACK · UI COMPONENTS (FASE 2)
+   ─────────────────────────────────────────────────────────────────
+   Componentes compartilhados: Button, Card, Field, ResponsiveTable.
+   Adoção progressiva nas Fases 3-5.
+   Usa tokens definidos em tokens.css e globals.css.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ────────────────────────────────────────────────────────────────
+   BUTTON
+   ──────────────────────────────────────────────────────────────── */
+.ui-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--font-family);
+  font-weight: var(--weight-semibold, 600);
+  letter-spacing: 0.04em;
+  border-radius: var(--radius-md);
+  border: 0.5px solid transparent;
+  cursor: pointer;
+  transition: background var(--duration-base) var(--ease-out),
+              border-color var(--duration-base) var(--ease-out),
+              color var(--duration-base) var(--ease-out),
+              box-shadow var(--duration-base) var(--ease-out),
+              transform var(--duration-base) var(--ease-out),
+              filter var(--duration-base) var(--ease-out);
+  white-space: nowrap;
+  user-select: none;
+  -webkit-user-select: none;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ui-btn:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.ui-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Tamanhos */
+.ui-btn--sm {
+  height: var(--touch-target-sm);
+  padding: 0 12px;
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+}
+.ui-btn--md {
+  height: var(--touch-target-md);
+  padding: 0 18px;
+  font-size: var(--text-sm);
+  letter-spacing: 0.10em;
+}
+.ui-btn--lg {
+  height: var(--touch-target-lg);
+  padding: 0 24px;
+  font-size: var(--text-sm);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.ui-btn--block {
+  width: 100%;
+}
+
+/* Variantes */
+.ui-btn--primary {
+  background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
+  color: var(--bg);
+  border-color: transparent;
+  box-shadow:
+    0 6px 18px rgba(240, 162, 2, 0.18),
+    0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+}
+.ui-btn--primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow:
+    0 10px 24px rgba(240, 162, 2, 0.28),
+    0 0 0 1px rgba(255, 255, 255, 0.10) inset;
+  filter: brightness(1.04);
+}
+.ui-btn--primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.ui-btn--secondary {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+  border-color: var(--border);
+}
+.ui-btn--secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--gold-border);
+}
+
+.ui-btn--ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  border-color: transparent;
+}
+.ui-btn--ghost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+}
+
+.ui-btn--danger {
+  background: var(--danger-dim);
+  color: var(--danger);
+  border-color: rgba(239, 68, 68, 0.32);
+}
+.ui-btn--danger:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.18);
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
+/* Loading state */
+.ui-btn[data-loading="true"] {
+  pointer-events: none;
+  opacity: 0.7;
+}
+.ui-btn-spinner {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  animation: spin 0.7s linear infinite;
+}
+
+/* ────────────────────────────────────────────────────────────────
+   CARD
+   ──────────────────────────────────────────────────────────────── */
+.ui-card {
+  background: var(--bg-card);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  box-shadow: var(--shadow-sm);
+  contain: layout style;
+}
+
+.ui-card--padded-sm { padding: var(--spacing-md); }
+.ui-card--padded-lg { padding: var(--spacing-2xl); }
+
+.ui-card--interactive {
+  cursor: pointer;
+  transition: border-color var(--duration-base) var(--ease-out),
+              box-shadow var(--duration-base) var(--ease-out),
+              transform var(--duration-base) var(--ease-out);
+}
+.ui-card--interactive:hover {
+  border-color: var(--gold-border);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.ui-card--glow {
+  background:
+    radial-gradient(120% 80% at 100% 0%, rgba(240, 162, 2, 0.05) 0%, transparent 55%),
+    var(--bg-card);
+}
+
+/* Card header / body / footer (opcional) */
+.ui-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+.ui-card-title {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  margin: 0;
+}
+.ui-card-subtitle {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin: 0;
+}
+.ui-card-footer {
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-md);
+  border-top: 0.5px solid var(--border);
+}
+
+/* ────────────────────────────────────────────────────────────────
+   FIELD (label + input + error)
+   ──────────────────────────────────────────────────────────────── */
+.ui-field {
+  display: block;
+  margin-bottom: var(--spacing-lg);
+}
+
+.ui-field-label {
+  display: block;
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  font-weight: var(--weight-semibold);
+  margin-bottom: var(--spacing-sm);
+}
+
+.ui-field-control {
+  position: relative;
+  display: block;
+}
+
+.ui-field-input {
+  width: 100%;
+  height: 46px;
+  padding: 0 16px;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.02) 100%);
+  border: 0.5px solid rgba(116, 140, 171, 0.30);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: var(--text-base);
+  font-family: var(--font-family);
+  outline: none;
+  transition: border-color var(--duration-fast) var(--ease-out),
+              background var(--duration-fast) var(--ease-out),
+              box-shadow var(--duration-fast) var(--ease-out);
+  box-sizing: border-box;
+}
+
+.ui-field-input::placeholder {
+  color: rgba(116, 140, 171, 0.45);
+}
+
+.ui-field-input:focus {
+  border-color: rgba(240, 162, 2, 0.55);
+  background: linear-gradient(160deg, rgba(240, 162, 2, 0.06) 0%, rgba(240, 162, 2, 0.02) 100%);
+  box-shadow: 0 0 0 3px rgba(240, 162, 2, 0.10);
+}
+
+.ui-field-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ui-field--invalid .ui-field-input {
+  border-color: var(--danger);
+}
+
+.ui-field--invalid .ui-field-input:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.16);
+}
+
+.ui-field-help {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  margin-top: 6px;
+}
+
+.ui-field-error {
+  font-size: var(--text-xs);
+  color: var(--danger);
+  margin-top: 6px;
+}
+
+/* Suporte a ícone à esquerda */
+.ui-field--with-leading-icon .ui-field-input {
+  padding-left: 42px;
+}
+
+.ui-field-leading-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+  display: inline-flex;
+}
+
+/* Trailing slot (botões: olho, clear, etc) */
+.ui-field-trailing {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.ui-field--with-trailing .ui-field-input {
+  padding-right: 46px;
+}
+
+/* ────────────────────────────────────────────────────────────────
+   RESPONSIVE TABLE
+   Em desktop: tabela tradicional.
+   Em mobile (≤ 767px): vira lista de cards (uma linha = um card).
+   ──────────────────────────────────────────────────────────────── */
+.ui-table-wrap {
+  width: 100%;
+  overflow: hidden; /* nada de scroll horizontal */
+}
+
+.ui-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-base);
+}
+
+.ui-table thead th {
+  text-align: left;
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: var(--weight-semibold);
+  padding: 10px 12px;
+  border-bottom: 0.5px solid var(--border);
+  white-space: nowrap;
+}
+
+.ui-table tbody td {
+  padding: 14px 12px;
+  border-bottom: 0.5px solid var(--border);
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+
+.ui-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.ui-table--clickable tbody tr {
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-out);
+}
+.ui-table--clickable tbody tr:hover {
+  background: var(--bg-hover);
+}
+
+/* Alinhamentos */
+.ui-table .align-right { text-align: right; }
+.ui-table .align-center { text-align: center; }
+
+/* Mobile transformation: tabela → cards */
+@media (max-width: 767px) {
+  .ui-table {
+    display: block;
+  }
+  .ui-table thead {
+    display: none;
+  }
+  .ui-table tbody {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }
+  .ui-table tbody tr {
+    display: block;
+    background: var(--bg-card);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    box-shadow: var(--shadow-sm);
+  }
+  .ui-table tbody td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: 6px 0;
+    border-bottom: none;
+    font-size: var(--text-sm);
+  }
+  /* O label vem de data-label="..." na <td>, mostrado antes do valor */
+  .ui-table tbody td::before {
+    content: attr(data-label);
+    flex: 0 0 auto;
+    font-size: var(--text-2xs);
+    letter-spacing: var(--tracking-wider);
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: var(--weight-semibold);
+  }
+  /* Quando não tem data-label, esconde o ::before pra não ocupar espaço */
+  .ui-table tbody td:not([data-label])::before {
+    content: "";
+    display: none;
+  }
+  .ui-table .align-right,
+  .ui-table .align-center {
+    text-align: right;
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────
+   STATE PLACEHOLDER (uso interno em telas vazias)
+   ──────────────────────────────────────────────────────────────── */
+.ui-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--spacing-3xl) var(--spacing-lg);
+  gap: var(--spacing-md);
+}
+
+.ui-empty-icon {
+  font-size: 40px;
+  opacity: 0.55;
+}
+
+.ui-empty-title {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.ui-empty-desc {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  max-width: 480px;
+  line-height: var(--leading-relaxed);
+}

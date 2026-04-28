@@ -1,0 +1,207 @@
+rules_version = '2';
+
+// =========================================================================
+// WealthTrack — regras de segurança Firestore (rev: 2026-04-26 force-rebuild)
+// Hierarquia:
+//   master    → acesso total (William Porto)
+//   assessor  → lê/escreve apenas clientes com advisorId == uid
+//   cliente   → lê apenas o próprio doc em /clientes (via userId)
+// Escritas críticas (criar usuário, vincular assessor) passam pelas
+// Cloud Functions com Admin SDK — não pelas rules.
+// =========================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- Helpers ----------
+
+    function signedIn() { return request.auth != null; }
+
+    function myProfile() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    function myProfileExists() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    // Role do usuário: preferimos o custom claim (grátis, vem no token).
+    // Se não houver claim (token antigo pré-migração), cai no fallback que lê
+    // /users/{uid} — comportamento legado. Ambos funcionam durante transição.
+    // Após novo login, todos os tokens terão o claim e o fallback nunca roda.
+    function claimRole() {
+      return signedIn() && request.auth.token.role != null
+        ? request.auth.token.role
+        : null;
+    }
+    function myRole() {
+      return claimRole() != null
+        ? claimRole()
+        : (signedIn() && myProfileExists() ? myProfile().role : null);
+    }
+    function isMaster() { return myRole() == 'master'; }
+    function isAssessor() { return myRole() == 'assessor'; }
+    function isInterno() { return isMaster() || isAssessor(); }
+    function isCliente() { return myRole() == 'cliente'; }
+
+    // Bootstrap para o master (William) antes do doc /users existir.
+    function isBootstrapMaster() {
+      return signedIn()
+        && request.auth.token.email != null
+        && request.auth.token.email.lower() == 'williamporto0@gmail.com';
+    }
+    function isMasterOrBootstrap() { return isMaster() || isBootstrapMaster(); }
+
+    // ---------- /users ----------
+    // Cada user lê o próprio doc (useAuth depende disso).
+    // Master lê todos. Só Cloud Functions criam/alteram — cliente não pode
+    // criar doc aqui direto (impede forjar role).
+    match /users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isMasterOrBootstrap());
+
+      // Permite que o próprio usuário atualize flags seguras + dados de contato
+      // (nome, email, telefone) que ele confirma no modal de onboarding.
+      // Role, advisorId, etc. continuam só via Cloud Function.
+      allow update: if signedIn()
+                     && request.auth.uid == uid
+                     && request.resource.data.diff(resource.data).affectedKeys()
+                          .hasOnly(['mustResetPassword', 'updatedAt', 'nome', 'email', 'telefone', 'dadosConfirmadosEm']);
+
+      // Master pode atualizar qualquer doc em /users (ex.: reatribuir advisorId).
+      allow update: if isMasterOrBootstrap();
+
+      // Bootstrap: permite que o William crie o próprio doc master quando usa o /dev/seed.
+      allow create: if isBootstrapMaster() && request.auth.uid == uid
+                     && request.resource.data.role == 'master';
+
+      // Delete só via Cloud Function (client bloqueado).
+      allow delete: if false;
+    }
+
+    // ---------- /clientes ----------
+    // Master vê tudo. Assessor vê só seus (advisorId OR assessorId legado).
+    // Cliente vê só o próprio (userId == seu uid).
+    match /clientes/{clienteId} {
+      // Read: simplificado para evitar dependência de myRole() (que faz get
+      // de /users/{uid} dentro da regra). Em queries (LIST), o get interno
+      // estava dando permission-denied intermitente para assessor sem custom
+      // claim. Aqui o vínculo é direto via advisorId/assessorId/userId no
+      // próprio doc — sem outro lookup.
+      allow read: if isBootstrapMaster()
+                   || resource.data.advisorId == request.auth.uid
+                   || resource.data.assessorId == request.auth.uid
+                   || resource.data.userId == request.auth.uid
+                   || isMaster();
+
+      // Criação — master ou assessor; assessor é forçado a vincular a si mesmo.
+      allow create: if isMasterOrBootstrap()
+                     || (isAssessor()
+                         && (request.resource.data.advisorId == request.auth.uid
+                             || request.resource.data.assessorId == request.auth.uid));
+
+      // Atualização — master tudo; assessor só seus próprios; cliente só o próprio
+      // (sem trocar advisorId/userId).
+      // Igual ao read: simplificamos para evitar lookup de /users/{uid} dentro
+      // da regra (isAssessor/isCliente faziam isso e davam permission-denied
+      // intermitente quando o token não tinha custom claim). Aqui o vínculo é
+      // direto via campo no próprio doc.
+      allow update: if isMasterOrBootstrap()
+                     || (
+                       // assessor dono (via advisorId OU assessorId legado).
+                       (resource.data.advisorId == request.auth.uid
+                        || resource.data.assessorId == request.auth.uid)
+                       && (request.resource.data.advisorId == resource.data.advisorId
+                           || request.resource.data.advisorId == request.auth.uid)
+                     )
+                     || (
+                       // cliente dono — não pode trocar userId nem advisorId.
+                       resource.data.userId == request.auth.uid
+                       && request.resource.data.userId == resource.data.userId
+                       && request.resource.data.advisorId == resource.data.advisorId
+                     );
+
+      allow delete: if isMasterOrBootstrap();
+
+      // Subcoleções seguem a mesma lógica do doc pai.
+      // Assessor só acessa se o cliente pai estiver vinculado a ele.
+      // Cliente lê tudo do próprio doc; só ESCREVE em snapshotsCarteira
+      // (upload de PDF/imagem da própria carteira). Outras subcoleções
+      // ficam fechadas para cliente — evita que ele forje histórico/extrato.
+      //
+      // BUG HISTÓRICO: até abr/2026 esta regra bloqueava QUALQUER write
+      // de cliente em subcoleções, então uploads de carteira pelo próprio
+      // cliente caíam em permission-denied (sintoma "funciona via admin,
+      // falha pelo cliente"). Não regredir — manter a allow-list explícita.
+      match /{sub=**} {
+        function parentCliente() {
+          return get(/databases/$(database)/documents/clientes/$(clienteId)).data;
+        }
+        function assessorDonoDoPai() {
+          return isAssessor()
+            && (parentCliente().advisorId == request.auth.uid
+                || parentCliente().assessorId == request.auth.uid);
+        }
+        function clienteDonoDoPai() {
+          return isCliente() && parentCliente().userId == request.auth.uid;
+        }
+
+        allow read: if isMasterOrBootstrap() || assessorDonoDoPai() || clienteDonoDoPai();
+        allow write: if isMasterOrBootstrap() || assessorDonoDoPai();
+      }
+
+      // snapshotsCarteira — cliente dono pode escrever (upload de carteira pelo próprio cliente).
+      match /snapshotsCarteira/{mesRef} {
+        function parentCliente() {
+          return get(/databases/$(database)/documents/clientes/$(clienteId)).data;
+        }
+        allow read, write: if isMasterOrBootstrap()
+                            || (isAssessor()
+                                && (parentCliente().advisorId == request.auth.uid
+                                    || parentCliente().assessorId == request.auth.uid))
+                            || (isCliente() && parentCliente().userId == request.auth.uid);
+      }
+
+      // snapshotsFluxo — foto mensal de gastos/renda do cliente, mesmas regras de acesso.
+      match /snapshotsFluxo/{mesRef} {
+        function parentCliente() {
+          return get(/databases/$(database)/documents/clientes/$(clienteId)).data;
+        }
+        allow read, write: if isMasterOrBootstrap()
+                            || (isAssessor()
+                                && (parentCliente().advisorId == request.auth.uid
+                                    || parentCliente().assessorId == request.auth.uid))
+                            || (isCliente() && parentCliente().userId == request.auth.uid);
+      }
+    }
+
+    // ---------- /mercado (snapshot da análise de mercado — master escreve, todos leem) ----------
+    // Qualquer usuário autenticado lê o snapshot (todos veem os mesmos dados).
+    // Apenas master pode atualizar (botão "Atualizar dados" na página /mercado).
+    match /mercado/{doc} {
+      allow read:  if signedIn();
+      allow write: if isMasterOrBootstrap();
+    }
+
+    // ---------- /activity (log de movimentação — master vê tudo) ----------
+    // Evento precisa carimbar o userId do autor e ter um type string pequeno.
+    // Bloqueia forjar eventos em nome de outros ou encher o log com payloads grandes.
+    match /activity/{eventId} {
+      allow read: if isMasterOrBootstrap();
+      allow create: if signedIn()
+                     && request.resource.data.userId == request.auth.uid
+                     && request.resource.data.type is string
+                     && request.resource.data.type.size() <= 64;
+      allow update, delete: if false;
+    }
+
+    // ---------- /presence (quem está online — master vê tudo) ----------
+    match /presence/{uid} {
+      allow read: if isMasterOrBootstrap();
+      allow write: if signedIn() && request.auth.uid == uid;
+    }
+
+    // ---------- Default deny ----------
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}

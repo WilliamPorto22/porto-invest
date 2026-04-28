@@ -1,0 +1,250 @@
+/* ═══════════════════════════════════════════════════════════════
+   WEALTHTRACK - RESPONSIVE DESIGN
+   Mobile-first approach: base styles for mobile, then adjust at breakpoints
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ═════════════════════════════════════════════════════════════════
+   TABLET (480px and up)
+   ═════════════════════════════════════════════════════════════════ */
+
+@media (min-width: 480px) {
+  .container {
+    padding: 0 20px;
+  }
+
+  .container-narrow {
+    padding: 0 20px;
+  }
+
+  /* Two or three-column grids for tablet */
+  .grid-kpi {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .grid-clients {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .grid-alerts {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+
+  .grid-objectives {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .grid-assets {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Adjust typography for tablet */
+  h1 {
+    font-size: 24px;
+  }
+
+  h2 {
+    font-size: 20px;
+  }
+}
+
+/* ═════════════════════════════════════════════════════════════════
+   DESKTOP (768px and up)
+   ═════════════════════════════════════════════════════════════════ */
+
+@media (min-width: 768px) {
+  .container {
+    padding: 0 48px;
+  }
+
+  .container-narrow {
+    max-width: 800px;
+    padding: 0 48px;
+  }
+
+  .container-wide {
+    padding: 0 48px;
+  }
+
+  /* Four-column grids for desktop KPIs and clients */
+  .grid-kpi {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .grid-clients {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .grid-alerts {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+
+  /* Three-column grids for objectives and assets */
+  .grid-objectives {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .grid-assets {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  /* Market indicators: horizontal scroll or flex */
+  .grid-indicators {
+    grid-template-columns: repeat(5, 1fr);
+  }
+
+  /* Adjust typography for desktop */
+  h1 {
+    font-size: 28px;
+  }
+
+  h2 {
+    font-size: 22px;
+  }
+}
+
+/* ═════════════════════════════════════════════════════════════════
+   LARGE DESKTOP (1024px and up)
+   ═════════════════════════════════════════════════════════════════ */
+
+@media (min-width: 1024px) {
+  .container {
+    padding: 0 48px;
+  }
+
+  .container-wide {
+    max-width: 1280px;
+  }
+}
+
+/* ═════════════════════════════════════════════════════════════════
+   MOBILE SPECIFIC ADJUSTMENTS
+   For screens smaller than 480px
+   ═════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 479px) {
+  /* Reduce padding on very small screens */
+  .container {
+    padding: 0 16px;
+  }
+
+  .container-narrow {
+    padding: 0 16px;
+  }
+
+  /* Stack elements more tightly */
+  .grid-responsive {
+    gap: 12px;
+  }
+
+  /* Reduce font sizes for mobile */
+  body {
+    font-size: 14px;
+  }
+
+  h1 {
+    font-size: 20px;
+  }
+
+  h2 {
+    font-size: 18px;
+  }
+
+  /* Make buttons taller for tap targets */
+  button {
+    min-height: 44px;
+  }
+
+  /* Ensure cards don't get too narrow */
+  .card {
+    min-width: 0;
+  }
+}
+
+/* ═════════════════════════════════════════════════════════════════
+   ULTRA-COMPACTO (iPhone SE, Android entrada)
+   ═════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 360px) {
+  .container,
+  .container-narrow,
+  .container-wide {
+    padding: 0 12px;
+  }
+
+  body {
+    font-size: 13px;
+  }
+
+  h1 {
+    font-size: 18px;
+  }
+
+  h2 {
+    font-size: 16px;
+  }
+}
+
+/* ═════════════════════════════════════════════════════════════════
+   GLOBAL ANTI-OVERFLOW — evita scroll horizontal causado por
+   estilos inline com width:100vw, grids sem minmax, etc.
+   ═════════════════════════════════════════════════════════════════ */
+
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Tabelas e grids dentro do app: garantem scroll interno em vez de
+   estourar a tela. Qualquer elemento com .table-scroll ou .x-scroll ganha
+   overflow-x auto e reset de wrap. */
+.table-scroll,
+.x-scroll {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Children de grids nomeados nunca podem exceder a coluna */
+.grid-kpi > *,
+.grid-clients > *,
+.grid-objectives > *,
+.grid-assets > *,
+.grid-indicators > *,
+.grid-alerts > *,
+.dashboard-cards-xp > *,
+.dashboard-segment-clients > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* ═════════════════════════════════════════════════════════════════
+   LANDSCAPE MODE
+   Mobile phones in landscape
+   ═════════════════════════════════════════════════════════════════ */
+
+@media (max-height: 500px) and (orientation: landscape) {
+  .container {
+    padding: 8px 16px;
+  }
+
+  /* Reduce vertical spacing in landscape */
+  .grid-responsive {
+    gap: 8px;
+  }
+}
+
+/* ═════════════════════════════════════════════════════════════════
+   PRINT STYLES
+   ═════════════════════════════════════════════════════════════════ */
+
+@media print {
+  body {
+    background: white;
+    color: black;
+  }
+
+  .no-print {
+    display: none;
+  }
+}

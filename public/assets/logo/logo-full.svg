@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 140" fill="none">
+  <defs>
+    <linearGradient id="pGradFull" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2C4A6E"/>
+      <stop offset="1" stop-color="#16263D"/>
+    </linearGradient>
+    <linearGradient id="iGradFull" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#34A394"/>
+      <stop offset="1" stop-color="#1F7A6C"/>
+    </linearGradient>
+    <style>
+      .brand-full { font: 800 60px 'SF Pro Display','Helvetica Neue',Arial,sans-serif; letter-spacing: -1.2px; }
+      .brand-full-light { font-weight: 400; letter-spacing: 1.2px; }
+    </style>
+  </defs>
+  <!-- Icon -->
+  <g transform="translate(2,6)">
+    <path d="M20 18 L20 110 L36 110 L36 74 L58 74 C78 74 92 62 92 46 C92 30 78 18 58 18 Z
+             M36 33 L58 33 C68 33 75 38 75 46 C75 54 68 59 58 59 L36 59 Z"
+          fill="url(#pGradFull)"/>
+    <rect x="96" y="46" width="16" height="64" rx="8" fill="url(#iGradFull)"/>
+    <circle cx="104" cy="30" r="9" fill="url(#iGradFull)"/>
+  </g>
+  <!-- Wordmark -->
+  <text x="146" y="90" class="brand-full" fill="#F0EBD8">PORTO</text>
+  <text x="372" y="90" class="brand-full brand-full-light" fill="#F0EBD8">INVEST</text>
+</svg>

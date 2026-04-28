@@ -1,0 +1,541 @@
+/* ═══════════════════════════════════════════════════════════════
+   DASHBOARD MODERN — Refresh visual sitewide
+   Importado por último em main.jsx para sobrescrever o look antigo.
+   Não muda comportamento; só estética.
+   Pode ser removido com 1 linha em main.jsx se algo quebrar.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ────────────────────────────────────────────────────────────────
+   KPI CARDS (.card-xp) — gradiente sutil + glow dourado no hover
+   ──────────────────────────────────────────────────────────────── */
+.card-xp {
+  background:
+    radial-gradient(120% 80% at 100% 0%,
+      rgba(240, 162, 2, 0.04) 0%,
+      transparent 50%),
+    linear-gradient(160deg,
+      rgba(29, 45, 68, 0.95) 0%,
+      rgba(22, 34, 52, 0.95) 100%) !important;
+  border: 0.5px solid rgba(62, 92, 118, 0.30) !important;
+  border-radius: 14px !important;
+  box-shadow:
+    0 2px 10px rgba(0, 0, 0, 0.25),
+    0 0 0 1px rgba(255, 255, 255, 0.02) inset !important;
+  transition:
+    border-color 0.22s ease,
+    box-shadow 0.22s ease,
+    transform 0.22s ease,
+    background 0.22s ease !important;
+}
+
+.card-xp:hover {
+  background:
+    radial-gradient(120% 80% at 100% 0%,
+      rgba(240, 162, 2, 0.10) 0%,
+      transparent 55%),
+    linear-gradient(160deg,
+      rgba(36, 55, 86, 0.95) 0%,
+      rgba(26, 39, 60, 0.95) 100%) !important;
+  border-color: rgba(240, 162, 2, 0.45) !important;
+  transform: translateY(-3px) !important;
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.45),
+    0 0 24px rgba(240, 162, 2, 0.12),
+    0 0 0 1px rgba(240, 162, 2, 0.08) inset !important;
+}
+
+.card-xp-label {
+  font-size: 10px !important;
+  letter-spacing: 0.16em !important;
+  color: #8aa0bb !important;
+  font-weight: 600 !important;
+}
+
+.card-xp-value {
+  font-size: 26px !important;
+  font-weight: 300 !important;
+  color: #F0EBD8 !important;
+  letter-spacing: -0.015em !important;
+}
+
+@media (max-width: 768px) {
+  .card-xp-value { font-size: 20px !important; }
+  .card-xp-label { font-size: 9px !important; letter-spacing: 0.08em !important; }
+}
+
+/* ────────────────────────────────────────────────────────────────
+   CLIENT CARDS — glassmorphism dark, lift refinado
+   ──────────────────────────────────────────────────────────────── */
+.client-card {
+  background: linear-gradient(160deg,
+    rgba(29, 45, 68, 0.92) 0%,
+    rgba(22, 34, 52, 0.92) 100%) !important;
+  border: 0.5px solid rgba(62, 92, 118, 0.32) !important;
+  border-radius: 14px !important;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.22),
+    0 0 0 1px rgba(255, 255, 255, 0.015) inset !important;
+  transition:
+    border-color 0.22s ease,
+    box-shadow 0.22s ease,
+    transform 0.22s ease !important;
+  /* Estrutura (antes inline no JSX) */
+  padding: 15px;
+  cursor: pointer;
+  min-height: 160px;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+}
+
+.client-card:hover {
+  border-color: rgba(240, 162, 2, 0.50) !important;
+  transform: translateY(-3px) !important;
+  box-shadow:
+    0 14px 32px rgba(0, 0, 0, 0.50),
+    0 0 28px rgba(240, 162, 2, 0.15),
+    0 0 0 1px rgba(240, 162, 2, 0.10) inset !important;
+}
+
+/* Borda âmbar quando o cliente requer atenção (sem aporte / revisão atrasada / follow-up). */
+.client-card[data-attention="true"]:not(:hover) {
+  border-color: rgba(245, 158, 11, 0.32) !important;
+}
+
+@media (max-width: 480px) {
+  .client-card {
+    padding: 12px;
+    gap: 8px;
+    min-height: 140px;
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────
+   STATUS BAR (data + mercado aberto/fechado + última atualização)
+   ──────────────────────────────────────────────────────────────── */
+.dashboard-status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  row-gap: 6px;
+  column-gap: 10px;
+  font-size: 12px;
+  color: #748CAB;
+  margin-bottom: 12px;
+  letter-spacing: 0.06em;
+  font-weight: 500;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.dashboard-status-bar .ds-date { color: #5a7a9a; }
+.dashboard-status-bar .ds-sep { color: #3E5C76; }
+.dashboard-status-bar .ds-mkt-open { color: #22c55e; font-weight: 600; }
+.dashboard-status-bar .ds-mkt-closed { color: #9EB8D0; font-weight: 600; }
+.dashboard-status-bar .ds-update {
+  color: #5a7a9a;
+  text-transform: none;
+  font-weight: 400;
+}
+.dashboard-status-bar .ds-update strong { color: #748CAB; }
+
+@media (max-width: 480px) {
+  .dashboard-status-bar {
+    font-size: 10.5px;
+    column-gap: 8px;
+    letter-spacing: 0.04em;
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────
+   ALERT CARDS — bordas mais sutis + tipografia refinada
+   ──────────────────────────────────────────────────────────────── */
+.alert-card {
+  border-radius: 12px !important;
+  padding: 14px 16px !important;
+  transition: all 0.22s ease !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
+}
+.alert-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.32) !important;
+}
+
+.alert-card[data-severity="warning"] {
+  background: linear-gradient(160deg,
+    rgba(245, 158, 11, 0.10) 0%,
+    rgba(245, 158, 11, 0.04) 100%) !important;
+  border: 0.5px solid rgba(245, 158, 11, 0.35) !important;
+}
+.alert-card[data-severity="danger"] {
+  background: linear-gradient(160deg,
+    rgba(239, 68, 68, 0.10) 0%,
+    rgba(239, 68, 68, 0.04) 100%) !important;
+  border: 0.5px solid rgba(239, 68, 68, 0.35) !important;
+}
+.alert-card[data-severity="info"] {
+  background: linear-gradient(160deg,
+    rgba(25, 130, 196, 0.10) 0%,
+    rgba(25, 130, 196, 0.04) 100%) !important;
+  border: 0.5px solid rgba(25, 130, 196, 0.35) !important;
+}
+
+/* ────────────────────────────────────────────────────────────────
+   SEGMENT HEADERS — eyebrow mais sofisticado
+   ──────────────────────────────────────────────────────────────── */
+.dashboard-segment-header {
+  margin-top: 28px !important;
+  margin-bottom: 16px !important;
+}
+
+.dashboard-segment-title {
+  font-size: 11px !important;
+  letter-spacing: 0.20em !important;
+  color: #8aa0bb !important;
+  font-weight: 600 !important;
+  text-transform: uppercase;
+}
+
+.dashboard-segment-count {
+  font-size: 11px !important;
+  color: #748CAB !important;
+  font-weight: 500 !important;
+}
+
+/* ────────────────────────────────────────────────────────────────
+   SCROLLBAR — mais sutil
+   ──────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar-thumb {
+  background: rgba(240, 162, 2, 0.15) !important;
+  border-radius: 4px !important;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(240, 162, 2, 0.30) !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   HUB PI BANNER — Premium dourado (substitui o verde-azulado antigo)
+   Mantém estrutura mas usa paleta consistente com a HomeLiberdade.
+   ════════════════════════════════════════════════════════════════ */
+.hub-pi {
+  background:
+    radial-gradient(120% 100% at 100% 0%,
+      rgba(240, 162, 2, 0.14) 0%,
+      rgba(240, 162, 2, 0.04) 35%,
+      transparent 65%),
+    radial-gradient(80% 60% at 0% 100%,
+      rgba(25, 130, 196, 0.10) 0%,
+      transparent 60%),
+    linear-gradient(160deg,
+      #1a2747 0%,
+      #131e36 45%,
+      #0d1321 100%) !important;
+  border: 0.5px solid rgba(240, 162, 2, 0.20) !important;
+  border-radius: 16px !important;
+  box-shadow:
+    0 6px 24px rgba(0, 0, 0, 0.40),
+    0 0 0 1px rgba(255, 255, 255, 0.02) inset,
+    0 1px 0 rgba(255, 255, 255, 0.04) inset !important;
+  padding: 16px 22px !important;
+  margin-bottom: 22px !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.hub-pi::before {
+  background: radial-gradient(420px 160px at 0% 50%,
+    rgba(240, 162, 2, 0.10),
+    transparent 70%) !important;
+}
+
+.hub-pi-mark {
+  width: 44px !important;
+  height: 44px !important;
+  filter: drop-shadow(0 4px 14px rgba(240, 162, 2, 0.32)) !important;
+}
+
+.hub-pi-eyebrow {
+  font-size: 10px !important;
+  color: #FFB20F !important;
+  letter-spacing: 0.22em !important;
+}
+
+.hub-pi-title {
+  font-size: 18px !important;
+  color: #F0EBD8 !important;
+  font-weight: 300 !important;
+  letter-spacing: -0.01em !important;
+}
+
+.hub-pi-title b {
+  font-weight: 500 !important;
+  background: linear-gradient(135deg, #FFB20F, #F0EBD8) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  color: transparent !important;
+}
+
+.hub-pi-sub {
+  font-size: 12px !important;
+  color: #8aa0bb !important;
+  letter-spacing: 0.02em !important;
+}
+
+/* Mobile: ajustes finais */
+@media (max-width: 768px) {
+  .hub-pi { padding: 14px 16px !important; }
+  .hub-pi-mark { width: 38px !important; height: 38px !important; }
+  .hub-pi-title { font-size: 16px !important; }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   SIDEBAR — Refresh com paleta dourada (era teal #45B5A3)
+   Mantém estrutura/comportamento; só recolore + sofistica visual.
+   ════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Substitui as variáveis teal pelas douradas pra unificar com o app */
+  --sbar-text-active: #FFB20F !important;
+  --sbar-bg-hover: rgba(240, 162, 2, 0.07) !important;
+  --sbar-bg-focus: rgba(240, 162, 2, 0.12) !important;
+  --sbar-border-strong: rgba(240, 162, 2, 0.35) !important;
+}
+
+.sidebar {
+  background:
+    linear-gradient(180deg,
+      rgba(11, 22, 40, 0.98) 0%,
+      rgba(13, 19, 33, 0.98) 100%) !important;
+  border-right: 0.5px solid rgba(240, 162, 2, 0.10) !important;
+}
+
+.sidebar.expanded {
+  background:
+    radial-gradient(60% 40% at 0% 0%,
+      rgba(240, 162, 2, 0.04) 0%,
+      transparent 60%),
+    linear-gradient(180deg,
+      rgba(11, 22, 40, 0.98) 0%,
+      rgba(13, 19, 33, 0.98) 100%) !important;
+  box-shadow:
+    14px 0 60px -12px rgba(0, 0, 0, 0.7),
+    0 0 32px rgba(240, 162, 2, 0.06),
+    inset -1px 0 0 rgba(255, 255, 255, 0.03) !important;
+}
+
+/* Logo da sidebar com glow dourado */
+.sidebar .sbar-logo,
+.sidebar .pi-logo,
+.sidebar svg[class*="logo"] {
+  filter: drop-shadow(0 4px 14px rgba(240, 162, 2, 0.22)) !important;
+}
+
+/* Items de menu — hover dourado sutil */
+.sbar-item:hover,
+.sbar-link:hover {
+  background: rgba(240, 162, 2, 0.06) !important;
+}
+
+/* Item ativo — barra lateral dourada */
+.sbar-item.active,
+.sbar-link.active,
+.sbar-item[aria-current="page"],
+.sbar-link[aria-current="page"] {
+  background: rgba(240, 162, 2, 0.10) !important;
+  color: #FFB20F !important;
+}
+
+/* Search bar dentro da sidebar — borda dourada no foco */
+.sidebar input:focus,
+.sidebar-search input:focus {
+  border-color: rgba(240, 162, 2, 0.45) !important;
+}
+
+/* Sub-itens / nested */
+.sbar-submenu .sbar-link:hover {
+  background: rgba(240, 162, 2, 0.05) !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   BOTÕES — Padronização sitewide
+   Cobre QUALQUER <button> que não tem classe específica de
+   componente (sidebar, navbar, etc preservados via :not()).
+   3 alturas: 32px (chip/sm), 38px (md/default), 44px (lg/CTA).
+   ════════════════════════════════════════════════════════════════ */
+
+/* Reset suave em todos botões: font, transition, line-height consistentes
+   sem afetar layout/padding/cor (que vêm dos estilos da página). */
+button {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  font-feature-settings: "ss01", "cv11";
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.18s ease, border-color 0.18s ease,
+              transform 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
+}
+
+/* Botões "ghost" — sem class específica + estilo ghost via inline */
+button[style*="background:none"],
+button[style*="background:transparent"],
+button[style*="background: none"],
+button[style*="background: transparent"] {
+  font-weight: 500;
+  letter-spacing: 0.05em;
+}
+
+/* CTA principal — class C.btnPrimary do theme.js (padding 15px) */
+button[style*="letter-spacing: 0.2em"],
+button[style*="letter-spacing:0.2em"] {
+  font-weight: 500 !important;
+  font-size: 11.5px !important;
+  letter-spacing: 0.16em !important;
+  text-transform: uppercase;
+}
+
+/* CHIP / pequeno — borda arredondada total, padding apertado */
+button.chip,
+button.pill,
+button[style*="border-radius:999"],
+button[style*="border-radius: 999"] {
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.04em !important;
+}
+
+/* Floating nav buttons (botões redondos das setas Voltar/Avançar) */
+.floating-nav-btn {
+  font-size: 18px !important;
+  font-weight: 300 !important;
+  letter-spacing: 0 !important;
+  width: 44px !important;
+  height: 44px !important;
+}
+
+/* "Salvar" / "Confirmar" / botões de ação primária (heurística por cor de borda) */
+button[style*="rgba(0,204,102"],
+button[style*="rgba(34,197,94"] {
+  font-weight: 500 !important;
+  letter-spacing: 0.06em !important;
+}
+
+/* Hover universal sutil em qualquer botão clicável (acelera percepção) */
+button:not([disabled]):hover {
+  cursor: pointer;
+}
+
+/* Botões disabled — visual menos quebrado */
+button[disabled] {
+  cursor: not-allowed !important;
+  opacity: 0.55;
+}
+
+/* ────────────────────────────────────────────────────────────────
+   CLASSES UTILITÁRIAS PARA NOVOS BOTÕES (uso futuro)
+   Componentes novos podem usar diretamente:
+   <button className="pi-btn pi-btn-primary pi-btn-md">Salvar</button>
+   ──────────────────────────────────────────────────────────────── */
+.pi-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 0.5px solid;
+  border-radius: 10px;
+  font-family: inherit;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+  padding: 0 16px;
+  height: 38px;
+  font-size: 12.5px;
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(116, 140, 171, 0.30);
+  color: #b0bcd0;
+}
+
+.pi-btn:hover { background: rgba(255, 255, 255, 0.06); }
+.pi-btn:active { transform: scale(0.98); }
+.pi-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Tamanhos */
+.pi-btn-sm { height: 32px; padding: 0 12px; font-size: 11.5px; }
+.pi-btn-md { height: 38px; padding: 0 16px; font-size: 12.5px; }
+.pi-btn-lg { height: 44px; padding: 0 22px; font-size: 13px; }
+
+/* Estilos */
+.pi-btn-primary {
+  background: linear-gradient(135deg, rgba(240,162,2,0.18), rgba(240,162,2,0.08));
+  border-color: rgba(240, 162, 2, 0.45);
+  color: #FFB20F;
+  font-weight: 600;
+}
+.pi-btn-primary:hover {
+  background: linear-gradient(135deg, rgba(240,162,2,0.28), rgba(240,162,2,0.14));
+  box-shadow: 0 4px 16px rgba(240, 162, 2, 0.20);
+}
+
+.pi-btn-secondary {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(116, 140, 171, 0.30);
+  color: #b0bcd0;
+}
+
+.pi-btn-danger {
+  background: rgba(239, 68, 68, 0.10);
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #fca5a5;
+}
+.pi-btn-danger:hover {
+  background: rgba(239, 68, 68, 0.18);
+}
+
+.pi-btn-success {
+  background: rgba(0, 204, 102, 0.10);
+  border-color: rgba(0, 204, 102, 0.35);
+  color: #86efac;
+}
+.pi-btn-success:hover {
+  background: rgba(0, 204, 102, 0.18);
+}
+
+/* Variante "pill" (totalmente arredondada) */
+.pi-btn-pill { border-radius: 999px; }
+
+/* ════════════════════════════════════════════════════════════════
+   INPUTS — Suavização sitewide (sem quebrar layout existente)
+   Aplica transition + focus dourado em qualquer input/select/textarea.
+   Não força altura/padding (preserva layout das páginas).
+   ════════════════════════════════════════════════════════════════ */
+
+input, select, textarea {
+  font-family: inherit;
+  transition: border-color 0.18s ease, background-color 0.18s ease,
+              box-shadow 0.18s ease;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: rgba(240, 162, 2, 0.55) !important;
+  box-shadow: 0 0 0 3px rgba(240, 162, 2, 0.10);
+}
+
+/* Placeholder mais sutil */
+input::placeholder,
+textarea::placeholder {
+  color: rgba(116, 140, 171, 0.45);
+  font-weight: 400;
+}
+
+/* Selection (seleção de texto) — dourada sutil */
+::selection {
+  background: rgba(240, 162, 2, 0.32);
+  color: #F0EBD8;
+}

@@ -1,0 +1,41 @@
+/* ═══════════════════════════════════════════════════════════════
+   DIAGNÓSTICO — Refresh visual minimal e seguro
+   Aplica apenas dentro de .pi-diag-page
+   Estratégia conservadora: só ajusta o que tem CERTEZA que é alvo,
+   evita seletores [style*="..."] muito amplos que podem matchar
+   elementos errados e quebrar layout.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Padrão de fundo da página inteira — gradiente sutil */
+.pi-diag-page {
+  position: relative;
+}
+
+/* Glow dourado decorativo no canto superior direito */
+.pi-diag-page::before {
+  content: "";
+  position: fixed;
+  top: -200px;
+  right: -150px;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle,
+    rgba(240, 162, 2, 0.10) 0%,
+    rgba(240, 162, 2, 0.03) 35%,
+    transparent 70%);
+  filter: blur(60px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.pi-diag-page > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Scrollbar sutil */
+.pi-diag-page::-webkit-scrollbar { width: 6px; }
+.pi-diag-page::-webkit-scrollbar-thumb {
+  background: rgba(240, 162, 2, 0.20);
+  border-radius: 3px;
+}

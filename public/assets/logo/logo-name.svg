@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 80" fill="none">
+  <!-- "PORTO INVEST" — cream/white for dark theme.
+       Renderizado como texto para manter escalabilidade perfeita.
+       text-anchor="middle" garante que o conteúdo fique centralizado no viewBox. -->
+  <style>
+    .brand { font: 800 56px 'SF Pro Display','Helvetica Neue',Arial,sans-serif; letter-spacing: -1.2px; }
+    .brand-light { font-weight: 400; letter-spacing: 1px; }
+  </style>
+  <text x="260" y="58" text-anchor="middle" class="brand" fill="#F0EBD8">PORTO<tspan dx="26" class="brand-light">INVEST</tspan></text>
+</svg>

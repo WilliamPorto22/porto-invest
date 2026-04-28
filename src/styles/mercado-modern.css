@@ -1,0 +1,130 @@
+/* ═══════════════════════════════════════════════════════════════
+   MERCADO — Polish premium escopado em .mercado-wrapper
+   Aprimora hero, blocos, tabs sem mexer em layout/grid.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ────────────────────────────────────────────────────────────────
+   HERO — glow dourado animado de fundo
+   ──────────────────────────────────────────────────────────────── */
+.mercado-wrapper .m-hero {
+  position: relative;
+  overflow: hidden;
+}
+
+.mercado-wrapper .m-hero::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 900px;
+  height: 600px;
+  background: radial-gradient(ellipse,
+    rgba(240, 162, 2, 0.12) 0%,
+    rgba(240, 162, 2, 0.04) 35%,
+    transparent 70%);
+  filter: blur(60px);
+  pointer-events: none;
+  animation: pi-merc-pulse 6s ease-in-out infinite alternate;
+}
+
+@keyframes pi-merc-pulse {
+  0%   { opacity: 0.7; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 1;   transform: translate(-50%, -50%) scale(1.08); }
+}
+
+.mercado-wrapper .m-hero-inner {
+  position: relative;
+  z-index: 1;
+}
+
+/* Eyebrow do hero — letter-spacing ainda mais premium */
+.mercado-wrapper .m-hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  letter-spacing: 0.32em;
+}
+.mercado-wrapper .m-hero-eyebrow::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #F0A202;
+  box-shadow: 0 0 10px rgba(240, 162, 2, 0.8);
+  animation: pi-merc-dot 1.8s ease-in-out infinite;
+}
+@keyframes pi-merc-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.85); }
+}
+
+/* Título do hero — gradient sutil no destaque */
+.mercado-wrapper .m-hero-titulo .destaque {
+  background: linear-gradient(135deg, #F0A202 0%, #FFB20F 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 40px rgba(240, 162, 2, 0.25);
+}
+
+/* ────────────────────────────────────────────────────────────────
+   Cards das seções (.m-altas, .m-blocos, etc)
+   Polish sutil — gradient + sombra
+   ──────────────────────────────────────────────────────────────── */
+.mercado-wrapper .m-altas,
+.mercado-wrapper .m-spx,
+.mercado-wrapper .m-blocos {
+  background: radial-gradient(120% 80% at 100% 0%,
+    rgba(240, 162, 2, 0.04) 0%,
+    transparent 50%),
+  linear-gradient(180deg, #0D1321 0%, #0D1321 100%);
+}
+
+/* ────────────────────────────────────────────────────────────────
+   Tabs — pill animation no active
+   ──────────────────────────────────────────────────────────────── */
+.mercado-wrapper .m-tab {
+  transition: background-color 0.18s ease, color 0.18s ease,
+              transform 0.18s ease, box-shadow 0.18s ease !important;
+}
+.mercado-wrapper .m-tab:hover {
+  transform: translateY(-1px);
+}
+.mercado-wrapper .m-tab.active,
+.mercado-wrapper .m-tab[aria-selected="true"] {
+  box-shadow: 0 4px 14px rgba(240, 162, 2, 0.18);
+}
+
+/* ────────────────────────────────────────────────────────────────
+   Timestamp do hero — pill mais sofisticado
+   ──────────────────────────────────────────────────────────────── */
+.mercado-wrapper .m-timestamp {
+  background: rgba(255, 255, 255, 0.03);
+  border: 0.5px solid rgba(116, 140, 171, 0.25);
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: #8aa0bb;
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+.mercado-wrapper .m-timestamp:hover {
+  border-color: rgba(240, 162, 2, 0.4);
+  background: rgba(240, 162, 2, 0.06);
+}
+
+/* Disclaimer no fim — visual mais elegante */
+.mercado-wrapper .m-disclaimer {
+  border-top: 0.5px solid rgba(62, 92, 118, 0.22);
+  margin-top: 60px;
+  padding-top: 30px;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .mercado-wrapper .m-hero::before {
+    width: 100vw;
+    height: 100vw;
+  }
+}

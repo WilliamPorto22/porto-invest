@@ -1,0 +1,86 @@
+import { lazy, Suspense } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import EmDesenvolvimento from "./pages/EmDesenvolvimento";
+import { ProtectedRoute } from "./components/ProtectedRoute";
+import { ErrorBoundary } from "./components/ErrorBoundary";
+import { ROLES } from "./constants/roles";
+import WhatsAppButton from "./components/WhatsAppButton";
+import AssessorOnboardingModal from "./components/AssessorOnboardingModal";
+// Login é a primeira tela que todos veem — carregado de forma eager
+// para evitar o spinner de "carregando…" antes do formulário aparecer.
+import Login from "./pages/Login";
+
+// Demais páginas carregadas sob demanda para reduzir o bundle inicial.
+const Dashboard         = lazy(() => import("./pages/Dashboard"));
+const ClienteFicha      = lazy(() => import("./pages/ClienteFicha"));
+const Objetivos         = lazy(() => import("./pages/Objetivos"));
+const ObjetivoDetalhes  = lazy(() => import("./pages/ObjetivoDetalhes"));
+const Carteira          = lazy(() => import("./pages/Carteira"));
+const FluxoMensal       = lazy(() => import("./pages/FluxoMensal"));
+const Diagnostico       = lazy(() => import("./pages/Diagnostico"));
+const Simulador         = lazy(() => import("./pages/Simulador"));
+const DevSeed           = lazy(() => import("./pages/DevSeed"));
+const Extrato           = lazy(() => import("./pages/Extrato"));
+const AjustesCarteira   = lazy(() => import("./pages/AjustesCarteira"));
+const AdminUsuarios     = lazy(() => import("./pages/AdminUsuarios"));
+const ResetPassword     = lazy(() => import("./pages/ResetPassword"));
+const Mercado                = lazy(() => import("./pages/Mercado"));
+const CarteirasDesalinhadas  = lazy(() => import("./pages/CarteirasDesalinhadas"));
+const MinhaAlocacao          = lazy(() => import("./pages/MinhaAlocacao"));
+
+const LoadingPage = () => (
+  <div className="page-loading"><span>carregando…</span></div>
+);
+
+// Rotas "só assessor interno" (master + assessor)
+const INTERNO = [ROLES.MASTER, ROLES.ASSESSOR];
+
+// Wrapper enxuto — reduz duplicação do <ProtectedRoute>…</ProtectedRoute>
+const Guard = ({ element, roles }) => (
+  <ProtectedRoute roles={roles}>{element}</ProtectedRoute>
+);
+
+function App() {
+  return (
+    <ErrorBoundary>
+    <BrowserRouter>
+      <Suspense fallback={<LoadingPage />}>
+        <Routes>
+          <Route path="/" element={<Login />} />
+
+          <Route path="/dashboard" element={<Guard element={<Dashboard />} />} />
+          <Route path="/cliente/:id" element={<Guard element={<ClienteFicha />} />} />
+          <Route path="/cliente/:id/objetivos" element={<Guard element={<Objetivos />} />} />
+          <Route path="/objetivo/:clienteId/:objetivoIndex" element={<Guard element={<ObjetivoDetalhes />} />} />
+          <Route path="/cliente/:id/carteira" element={<Guard element={<Carteira />} />} />
+          <Route path="/cliente/:id/fluxo" element={<Guard element={<FluxoMensal />} />} />
+          <Route path="/cliente/:id/diagnostico" element={<Guard element={<Diagnostico />} />} />
+          <Route path="/cliente/:id/simulador" element={<Guard element={<Simulador />} />} />
+          <Route path="/cliente/:id/extrato" element={<Guard element={<Extrato />} />} />
+          <Route path="/cliente/:id/ajustes" element={<Guard element={<AjustesCarteira />} />} />
+
+          <Route
+            path="/vencimentos"
+            element={<Guard roles={INTERNO} element={<EmDesenvolvimento titulo="Vencimentos" icone="📅" descricao="Vamos listar todos os ativos da sua carteira que estão prestes a vencer, com os clientes vinculados a cada um — para que você possa avisá-los no dia certo." />} />}
+          />
+          <Route path="/mercado" element={<Guard element={<Mercado />} />} />
+          <Route path="/carteiras-desalinhadas" element={<Guard roles={INTERNO} element={<CarteirasDesalinhadas />} />} />
+          <Route path="/minha-alocacao" element={<Guard element={<MinhaAlocacao />} />} />
+
+          <Route path="/admin/usuarios" element={<Guard roles={[ROLES.MASTER]} element={<AdminUsuarios />} />} />
+          <Route path="/reset-password" element={<Guard element={<ResetPassword />} />} />
+
+          {/* Gating do Master fica dentro do próprio DevSeed (useAuth.isMaster). */}
+          <Route path="/dev/seed" element={<Guard roles={[ROLES.MASTER]} element={<DevSeed />} />} />
+
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+        <WhatsAppButton />
+        <AssessorOnboardingModal />
+      </Suspense>
+    </BrowserRouter>
+    </ErrorBoundary>
+  );
+}
+
+export default App;

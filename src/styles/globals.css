@@ -1,0 +1,313 @@
+/* ═══════════════════════════════════════════════════════════════
+   WEALTHTRACK - GLOBAL STYLES & CSS VARIABLES
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ──── BREAKPOINTS ──── */
+  --mobile: 480px;
+  --tablet: 768px;
+  --desktop: 1024px;
+
+  /* ──── COLORS - PALETA PRINCIPAL ──── */
+  --bg: #0D1321;
+  --bg-card: #1D2D44;
+  --bg-secondary: #162234;
+  --bg-hover: #243756;
+  --border: rgba(62, 92, 118, 0.35);
+  --border-focus: rgba(240, 162, 2, 0.5);
+
+  /* Text Colors */
+  --text-primary: #F0EBD8;
+  --text-secondary: #748CAB;
+  --text-muted: #3E5C76;
+
+  /* Accent Colors - Dourado Premium */
+  --gold: #F0A202;
+  --gold-light: #FFB20F;
+  --gold-bright: #F1C40F;
+  --gold-dim: rgba(240, 162, 2, 0.12);
+  --gold-border: rgba(240, 162, 2, 0.28);
+
+  /* Accent Colors - Suporte */
+  --blue: #1982C4;
+  --blue-dim: rgba(25, 130, 196, 0.12);
+  --success: #00CC66;
+  --success-dim: rgba(0, 204, 102, 0.12);
+  --warning: #FFB20F;
+  --warning-dim: rgba(255, 178, 15, 0.12);
+  --danger: #ef4444;
+  --danger-dim: rgba(239, 68, 68, 0.12);
+  --purple: #6A4C93;
+  --purple-dim: rgba(106, 76, 147, 0.15);
+
+  /* ──── SPACING ──── */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 20px;
+  --spacing-2xl: 28px;
+  --spacing-3xl: 48px;
+
+  /* ──── BORDER RADIUS - Modernizado ──── */
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+
+  /* ──── TYPOGRAPHY ──── */
+  --font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+
+  /* ──── SHADOWS - Profundidade Realista ──── */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --shadow-gold: 0 4px 20px rgba(240, 162, 2, 0.15);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RESET & BASE STYLES
+   ═══════════════════════════════════════════════════════════════ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  max-width: 100%;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: var(--font-family);
+  line-height: 1.6;
+  overflow-x: hidden;
+  max-width: 100%;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+input, button, select, textarea { font-family: inherit; }
+button { cursor: pointer; }
+input::placeholder { color: rgba(116,140,171,0.45); }
+select option { background: #1D2D44; }
+
+/* Permitir seleção apenas em inputs */
+input, textarea, select {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RESPONSIVE GRID UTILITIES
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Mobile-first default: single column */
+.grid-responsive {
+  display: grid;
+  gap: var(--spacing-lg);
+}
+
+.grid-kpi {
+  display: grid;
+  gap: var(--spacing-lg);
+  grid-template-columns: 1fr; /* Mobile: 1 column */
+}
+
+.grid-clients {
+  display: grid;
+  gap: var(--spacing-lg);
+  grid-template-columns: 1fr; /* Mobile: 1 column */
+}
+
+.grid-alerts {
+  display: grid;
+  gap: var(--spacing-lg);
+  grid-template-columns: 1fr; /* Mobile: 1 column */
+}
+
+.grid-objectives {
+  display: grid;
+  gap: var(--spacing-lg);
+  grid-template-columns: 1fr; /* Mobile: 1 column */
+}
+
+.grid-indicators {
+  display: grid;
+  gap: 0;
+  grid-template-columns: 1fr; /* Mobile: 1 column */
+}
+
+.grid-assets {
+  display: grid;
+  gap: var(--spacing-lg);
+  grid-template-columns: 1fr; /* Mobile: 1 column */
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CONTAINER UTILITIES
+   ═══════════════════════════════════════════════════════════════ */
+
+.container {
+  width: 100%;
+  max-width: 100%;
+  padding: 0 var(--spacing-lg);
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.container-narrow {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-lg);
+}
+
+.container-wide {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-lg);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   UTILITY CLASSES
+   ═══════════════════════════════════════════════════════════════ */
+
+.no-select {
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SCROLLBAR STYLES
+   ═══════════════════════════════════════════════════════════════ */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   FOCUS STATES
+   ═══════════════════════════════════════════════════════════════ */
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--gold);
+}
+
+button:focus {
+  outline: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ANIMATIONS
+   ═══════════════════════════════════════════════════════════════ */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInLeft {
+  from { opacity: 0; transform: translateX(-16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes shimmer {
+  0%   { opacity: 0.6; }
+  50%  { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+/* ──── Animação de entrada para cards e seções ──── */
+.animate-in {
+  animation: fadeInUp 0.45s ease both;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   GRID OVERFLOW PREVENTION
+   Ensures grid children never overflow their container
+   ═══════════════════════════════════════════════════════════════ */
+
+.grid-kpi > *,
+.grid-clients > *,
+.grid-objectives > *,
+.grid-assets > *,
+.grid-indicators > *,
+.grid-alerts > * {
+  min-width: 0;
+}
+
+/* Page containers - prevent horizontal overflow */
+.dashboard-content,
+.fluxo-content,
+.carteira-content {
+  overflow-x: hidden;
+  width: 100%;
+}
+
+.animate-in-delay-1 { animation: fadeInUp 0.45s 0.08s ease both; }
+.animate-in-delay-2 { animation: fadeInUp 0.45s 0.16s ease both; }
+.animate-in-delay-3 { animation: fadeInUp 0.45s 0.24s ease both; }
+.animate-in-delay-4 { animation: fadeInUp 0.45s 0.32s ease both; }

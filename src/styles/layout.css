@@ -1,0 +1,135 @@
+/* ═══════════════════════════════════════════════════════════════
+   LAYOUT GLOBAL — Padronização de margens 77px
+   Importado por último em main.jsx para sobrescrever tudo.
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Margem padrão entre borda lateral da área de conteúdo e o primeiro item */
+  --pi-side: 177px;
+
+  /* Em telas mais estreitas, reduzir gradualmente */
+  --pi-side-tablet: 40px;
+  --pi-side-mobile: 18px;
+}
+
+/* ────────────────────────────────────────────────────────────────
+   PÁGINAS COM SIDEBAR — desktop ≥ 901px
+   Sidebar = 72px. Conteúdo começa em (72 + 77)px da esquerda
+   e termina a 77px da direita.
+   ──────────────────────────────────────────────────────────────── */
+@media (min-width: 901px) {
+  .with-sidebar,
+  .dashboard-content.with-sidebar {
+    padding-left: calc(var(--sbar-collapsed) + var(--pi-side)) !important;
+    padding-right: var(--pi-side) !important;
+    padding-top: 28px !important;
+    padding-bottom: 64px !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+  }
+
+  /* cliente-wrap usa o mesmo padrão */
+  .cliente-wrap {
+    padding-left: calc(var(--sbar-collapsed) + var(--pi-side)) !important;
+    padding-right: var(--pi-side) !important;
+    max-width: 100% !important;
+  }
+
+  /* Páginas sem sidebar (Login, etc) — apenas 77px laterais */
+  .dashboard-content:not(.with-sidebar) {
+    padding-left: var(--pi-side) !important;
+    padding-right: var(--pi-side) !important;
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────
+   TABLET (600 - 900px)
+   ──────────────────────────────────────────────────────────────── */
+@media (min-width: 600px) and (max-width: 900px) {
+  .with-sidebar,
+  .dashboard-content.with-sidebar,
+  .cliente-wrap,
+  .dashboard-content:not(.with-sidebar) {
+    padding-left: var(--pi-side-tablet) !important;
+    padding-right: var(--pi-side-tablet) !important;
+    padding-top: 22px !important;
+    padding-bottom: 56px !important;
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────
+   MOBILE (< 600px)
+   ──────────────────────────────────────────────────────────────── */
+@media (max-width: 599px) {
+  .with-sidebar,
+  .dashboard-content.with-sidebar,
+  .cliente-wrap,
+  .dashboard-content:not(.with-sidebar) {
+    padding-left: var(--pi-side-mobile) !important;
+    padding-right: var(--pi-side-mobile) !important;
+    padding-top: 18px !important;
+    padding-bottom: 48px !important;
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────
+   COMPACTAÇÃO GLOBAL — reduzir gaps verticais entre seções
+   ──────────────────────────────────────────────────────────────── */
+
+/* Cards e seções: arredondamento mais sutil em containers internos
+   (mantém o visual moderno mas sem inflar). */
+.dashboard-banner-wrapper {
+  margin-bottom: 20px !important;
+}
+
+/* Botões de ação top — mais finos e refinados (private banking) */
+.navbar .navbar-action-btn,
+.navbar button[class*="action"] {
+  padding: 7px 14px !important;
+  font-size: 11px !important;
+  letter-spacing: 0.06em !important;
+  height: auto !important;
+  min-height: 32px !important;
+}
+
+/* Reduz padding de cards muito espaçados que apareciam vazios */
+.card-xp,
+.kpi-card-xp {
+  padding: 18px 20px !important;
+}
+
+/* ────────────────────────────────────────────────────────────────
+   AJUSTES PARA O HUB-PI (banner do topo) — mais compacto
+   ──────────────────────────────────────────────────────────────── */
+.hub-pi {
+  padding: 14px 20px !important;
+  margin-bottom: 18px !important;
+}
+.hub-pi-mark {
+  width: 36px !important;
+  height: 36px !important;
+}
+.hub-pi-title {
+  font-size: 16px !important;
+  letter-spacing: -0.005em !important;
+}
+.hub-pi-sub {
+  font-size: 11px !important;
+}
+
+/* ────────────────────────────────────────────────────────────────
+   BARRA DE COTAÇÕES (mercado) — mais densa
+   ──────────────────────────────────────────────────────────────── */
+.dashboard-status-bar {
+  gap: 10px !important;
+  padding: 10px 16px !important;
+  margin-bottom: 22px !important;
+}
+
+/* ────────────────────────────────────────────────────────────────
+   AJUSTE: cliente-zoom desabilitado para garantir que 77px valham
+   exatamente. (zoom escala tudo e quebra a métrica.)
+   ──────────────────────────────────────────────────────────────── */
+.cliente-zoom {
+  zoom: 1 !important;
+}

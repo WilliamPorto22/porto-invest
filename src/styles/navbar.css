@@ -1,0 +1,576 @@
+/**
+ * NAVBAR PADRÃO - FINTECH PREMIUM
+ * Aplicável a todas as páginas do sistema
+ */
+
+:root {
+  --navbar-bg: rgba(11, 22, 40, 0.92);
+  --navbar-border: rgba(44, 74, 110, 0.48);
+  --text-primary: #F0EBD8;
+  --text-secondary: #8FA3BF;
+  --text-muted: #3E5C76;
+  --accent-primary: #F0A202;
+  --accent-secondary: #45B5A3;  /* teal do logo */
+}
+
+/* NAVBAR CONTAINER */
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 12px 20px;
+  background: var(--navbar-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 0.5px solid var(--navbar-border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  height: 64px;
+  box-sizing: border-box;
+  font-family: -apple-system, "SF Pro Display", sans-serif;
+  width: 100%;
+  max-width: 100%;
+  /* não usar overflow:hidden — isso corta dropdowns de busca/ações */
+}
+
+/* NAVBAR BRAND (Logo) */
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity 0.2s ease;
+  min-width: 150px;
+}
+
+/* Quando há sidebar (desktop), a sidebar já exibe o logo — evita duplicação. */
+@media (min-width: 901px) {
+  .has-sidebar .navbar .navbar-brand {
+    display: none;
+  }
+  .has-sidebar .navbar .navbar-center {
+    justify-content: flex-start;
+  }
+}
+
+/* NAVBAR MENU BUTTON — só no mobile, abre a sidebar-drawer */
+.navbar-menu-btn {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border: 0.5px solid rgba(240, 162, 2, 0.38);
+  border-radius: 9px;
+  background: rgba(240, 162, 2, 0.10);
+  color: #FFB20F;
+  font-family: inherit;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.22s ease, border-color 0.22s ease, color 0.22s ease;
+  flex-shrink: 0;
+}
+.navbar-menu-btn:hover,
+.navbar-menu-btn:focus-visible {
+  background: rgba(240, 162, 2, 0.18);
+  border-color: rgba(240, 162, 2, 0.55);
+  color: #FFCB47;
+  outline: none;
+}
+.navbar-menu-btn-label { font-size: 11px; letter-spacing: 0.14em; }
+
+@media (max-width: 900px) {
+  .navbar-menu-btn { display: inline-flex; }
+}
+
+.navbar-brand:hover {
+  opacity: 0.8;
+}
+
+.navbar-brand .logo {
+  display: flex;
+  align-items: center;
+}
+
+/* NAVBAR CENTER - Data + Search (alinhada à esquerda) */
+.navbar-center {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 32px;
+  flex: 1;
+  min-width: 0;
+}
+
+.navbar-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* SEARCH INPUT — à esquerda e compacta */
+.navbar-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 0.5px solid var(--navbar-border);
+  border-radius: 8px;
+  padding: 8px 14px;
+  flex: 0 0 240px;
+  width: 240px;
+  max-width: 260px;
+  min-width: 180px;
+  margin: 0;
+}
+
+.navbar-search-input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-size: 13px;
+  width: 100%;
+  font-family: inherit;
+}
+
+.navbar-search-input::placeholder {
+  color: var(--text-muted);
+}
+
+.navbar-search-icon {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+/* DATA */
+.navbar-date {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  text-transform: capitalize;
+}
+
+/* NAVBAR ACTIONS (Right side) */
+.navbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+/* ACTION BUTTONS — todos com mesma altura/padding/raio para ficarem visualmente iguais */
+.navbar-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 34px;
+  min-width: 86px;
+  padding: 0 14px;
+  border-radius: 8px;
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.navbar-action-btn:hover:not(:disabled) {
+  border-color: rgba(240, 162, 2, 0.55);
+  color: #FFB20F;
+  background: rgba(240, 162, 2, 0.10);
+}
+
+.navbar-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.navbar-action-btn.primary {
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+  background: rgba(240, 162, 2, 0.08);
+}
+
+.navbar-action-btn.primary:hover:not(:disabled) {
+  background: rgba(240, 162, 2, 0.12);
+}
+
+.navbar-action-btn.secondary {
+  border-color: rgba(116, 140, 171, 0.30);
+  color: #b0bcd0;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.navbar-action-btn.secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(116, 140, 171, 0.55);
+  color: #F0EBD8;
+}
+
+.navbar-action-btn.danger {
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+.navbar-action-btn.danger:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.18);
+  border-color: rgba(239, 68, 68, 0.55);
+  color: #ff6b6b;
+}
+
+/* Desktop: ícone só aparece quando NÃO há label (mantém botões sem ícone centralizados). */
+@media (min-width: 481px) {
+  .navbar-action-btn:has(.navbar-btn-icon):has(.navbar-btn-label) .navbar-btn-icon {
+    display: none;
+  }
+}
+
+/* DROPDOWN DE BUSCA */
+.navbar-search { position: relative; }
+.navbar-search-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  max-height: 420px;
+  overflow-y: auto;
+  background: rgba(11, 22, 40, 0.98);
+  border: 0.5px solid var(--navbar-border);
+  border-radius: 10px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  padding: 8px 0;
+  z-index: 120;
+}
+.navbar-search-group + .navbar-search-group {
+  border-top: 0.5px solid rgba(255, 255, 255, 0.05);
+  margin-top: 6px;
+  padding-top: 6px;
+}
+.navbar-search-group-title {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 4px 14px 6px;
+  font-weight: 600;
+}
+.navbar-search-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 14px;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease;
+}
+.navbar-search-item:hover,
+.navbar-search-item:focus-visible {
+  background: rgba(240, 162, 2, 0.08);
+  outline: none;
+}
+.navbar-search-item-icon {
+  display: inline-flex;
+  width: 20px; height: 20px;
+  color: #FFB20F;
+  flex-shrink: 0;
+}
+.navbar-search-item-texts { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.navbar-search-item-label {
+  color: var(--text-primary);
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.navbar-search-item-sub {
+  color: var(--text-muted);
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.navbar-search-empty {
+  padding: 12px 14px;
+  color: var(--text-muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+.navbar-btn-icon {
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.navbar-btn-label {
+  font-size: 10px;
+}
+
+/* USER BADGE — chip "Admin · Nome · R$ X,XM" exibido à esquerda das ações.
+   Em telas menores encolhe gradualmente, em mobile mostra só o primeiro token. */
+.navbar-user-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 0.5px solid rgba(255, 255, 255, 0.10);
+  color: #c7d3e0;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 900px) {
+  .navbar-user-badge {
+    max-width: 200px !important;
+    font-size: 10px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .navbar-user-badge {
+    max-width: 160px !important;
+    padding: 3px 8px !important;
+  }
+}
+
+@media (max-width: 560px) {
+  .navbar-user-badge {
+    display: none !important;
+  }
+}
+
+/* ─── MOBILE: navbar enxuta ──────────────────────────────────────
+   Em telas ≤ 900px:
+   • Só ícone (sem label) nos action buttons — reduz de botões largos para quadrados
+   • "Trocar minha senha" oculto — redundante no mobile, o usuário acessa por perfil
+   • User badge oculto — pouco espaço, bottom tab bar já contextualiza
+   • Gap comprimido para caber todos os ícones essenciais
+   ─────────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .navbar-btn-label { display: none !important; }
+  .navbar-action-btn {
+    min-width: 36px !important;
+    width: 36px !important;
+    height: 36px !important;
+    padding: 0 !important;
+    gap: 0 !important;
+  }
+  .navbar-btn-icon {
+    display: inline-flex !important; /* garante visibilidade do ícone */
+    font-size: 16px;
+  }
+  .navbar-actions { gap: 5px; }
+
+  /* Trocar senha: não precisa estar na navbar mobile */
+  .navbar-action-btn[title="Trocar minha senha"] { display: none !important; }
+}
+
+/* RESPONSIVIDADE */
+
+/* TABLET (768px) */
+@media (max-width: 768px) {
+  .navbar {
+    padding: 10px 16px;
+    gap: 16px;
+  }
+
+  .navbar-brand {
+    min-width: 120px;
+  }
+
+  .navbar-center {
+    gap: 16px;
+  }
+
+  .navbar-search {
+    flex: 0 0 220px;
+    width: 220px;
+    max-width: 240px;
+    min-width: 160px;
+  }
+
+  .navbar-title {
+    display: none;
+  }
+
+  .navbar-date {
+    font-size: 11px;
+  }
+
+  .navbar-action-btn {
+    min-width: 74px;
+    height: 32px;
+    padding: 0 10px;
+    font-size: 10px;
+  }
+
+  .navbar-btn-icon {
+    font-size: 12px;
+  }
+}
+
+/* MOBILE (480px) — mantém tudo em uma linha, só diminui */
+@media (max-width: 480px) {
+  .navbar {
+    padding: 8px 10px;
+    gap: 6px;
+    height: auto;
+    min-height: 56px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .navbar-brand {
+    min-width: 0;
+    flex: 0 1 auto;
+    flex-shrink: 2;
+    max-width: 50%;
+    overflow: hidden;
+  }
+
+  /* Em telas muito pequenas, busca quebra pra linha de baixo e ocupa 100% */
+  .navbar-center {
+    order: 3;
+    flex-basis: 100%;
+    gap: 8px;
+    padding-top: 4px;
+    min-width: 0;
+  }
+
+  .navbar-search {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 6px 10px;
+  }
+
+  .navbar-search-input {
+    font-size: 12px;
+  }
+
+  .navbar-date {
+    font-size: 10px;
+    min-width: 0;
+  }
+
+  /* Ações SEMPRE visíveis no topo direito — prioridade visual */
+  .navbar-actions {
+    gap: 4px;
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+
+  .navbar-action-btn {
+    padding: 0 9px;
+    font-size: 9px;
+    border-radius: 8px;
+    height: 34px;
+    min-width: 34px;
+    justify-content: center;
+  }
+
+  /* Em mobile mostramos o ícone (se houver) e escondemos o label — economiza espaço. */
+  .navbar-action-btn:has(.navbar-btn-icon) .navbar-btn-icon {
+    display: inline-flex;
+  }
+  .navbar-action-btn:has(.navbar-btn-icon) .navbar-btn-label {
+    display: none;
+  }
+
+  .navbar-btn-icon {
+    font-size: 14px;
+  }
+}
+
+/* ULTRA-COMPACTO (sub-360px — iPhone SE, Android antigos) */
+@media (max-width: 360px) {
+  .navbar {
+    padding: 6px 6px;
+    gap: 3px;
+  }
+
+  .navbar-brand {
+    max-width: 40%;
+  }
+
+  .navbar-search {
+    padding: 5px 8px;
+  }
+
+  .navbar-actions {
+    gap: 3px;
+  }
+
+  .navbar-action-btn {
+    padding: 0 7px;
+    height: 32px;
+    min-width: 32px;
+  }
+}
+
+/* Encolhe/oculta texto do logo em telas pequenas para garantir espaço
+   aos botões de ação (evita "botão sumindo" no canto direito). */
+@media (max-width: 480px) {
+  .navbar-brand .logo-navbar-container span {
+    font-size: 12px !important;
+    max-width: 110px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+@media (max-width: 360px) {
+  .navbar-brand .logo-navbar-container span {
+    display: none !important;
+  }
+}
+
+/* Animação de carregamento */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.navbar {
+  animation: fadeIn 0.3s ease;
+}

@@ -1,0 +1,117 @@
+/* ═══════════════════════════════════════════════════════════════
+   WEALTHTRACK · DESIGN TOKENS (FASE 0)
+   ─────────────────────────────────────────────────────────────────
+   Tokens aditivos. NÃO sobrescrevem nada do globals.css.
+   Carregado ANTES dos demais CSS (ver main.jsx).
+   Migração progressiva nas próximas fases.
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ──── BREAKPOINTS (canônicos, futuro padrão) ──── */
+  --bp-mobile: 480px;
+  --bp-mobile-lg: 640px;
+  --bp-tablet: 768px;
+  --bp-tablet-lg: 901px; /* alinhado ao corte atual da Sidebar */
+  --bp-desktop: 1024px;
+  --bp-desktop-lg: 1280px;
+  --bp-desktop-xl: 1536px;
+
+  /* ──── ESCALA TIPOGRÁFICA ──── */
+  --text-2xs: 10px;
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-base: 14px;
+  --text-md: 15px;
+  --text-lg: 16px;
+  --text-xl: 18px;
+  --text-2xl: 22px;
+  --text-3xl: 26px;
+  --text-4xl: 32px;
+  --text-5xl: 40px;
+
+  /* ──── PESOS DE FONTE ──── */
+  --weight-light: 300;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  /* ──── LINE-HEIGHTS ──── */
+  --leading-tight: 1.2;
+  --leading-snug: 1.35;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.7;
+
+  /* ──── LETTER-SPACING ──── */
+  --tracking-tighter: -0.02em;
+  --tracking-tight: -0.01em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.06em;
+  --tracking-wider: 0.12em;
+  --tracking-widest: 0.2em;
+
+  /* ──── SPACING ESTENDIDO (compatível com globals.css) ──── */
+  --space-0: 0;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+
+  /* ──── Z-INDEX SCALE ──── */
+  --z-base: 0;
+  --z-dropdown: 10;
+  --z-sticky: 100;
+  --z-overlay: 200;
+  --z-drawer: 300;
+  --z-modal: 400;
+  --z-toast: 500;
+  --z-tooltip: 600;
+
+  /* ──── TRANSIÇÕES (durações + easings) ──── */
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-slow: 320ms;
+  --duration-slower: 480ms;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ──── TOUCH TARGETS (mobile-first) ──── */
+  --touch-target-sm: 36px;
+  --touch-target-md: 44px;  /* mínimo Apple HIG */
+  --touch-target-lg: 56px;
+
+  /* ──── LAYOUT TOKENS ──── */
+  --navbar-height: 64px;
+  --sidebar-collapsed: 64px;
+  --sidebar-expanded: 240px;
+  --content-max-width: 1280px;
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-top: env(safe-area-inset-top, 0px);
+
+  /* ──── PERFORMANCE BUDGET (referência, não usado em CSS) ──── */
+  /* TTI alvo: < 1900ms · Failsafes: ≤ 1500ms */
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PREFERS-REDUCED-MOTION
+   Acessibilidade: respeitar usuários com sensibilidade a movimento.
+   ═══════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

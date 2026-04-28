@@ -1,0 +1,266 @@
+/* ═══════════════════════════════════════════════════════════════
+   PÁGINAS DO CLIENTE — Polish ambiente comum
+   Aplicado a páginas com class .pi-page-cliente:
+   AjustesCarteira, Objetivos, ObjetivoDetalhes, Simulador
+   ═══════════════════════════════════════════════════════════════ */
+
+.pi-page-cliente {
+  position: relative;
+}
+
+/* Glow dourado ambiente no canto superior direito (decorativo) */
+.pi-page-cliente::before {
+  content: "";
+  position: fixed;
+  top: -150px;
+  right: -100px;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle,
+    rgba(240, 162, 2, 0.08) 0%,
+    rgba(240, 162, 2, 0.02) 40%,
+    transparent 70%);
+  filter: blur(60px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.pi-page-cliente > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ────────────────────────────────────────────────────────────────
+   SIMULADOR — polish específico do simulador-container
+   ──────────────────────────────────────────────────────────────── */
+.simulador-container {
+  position: relative;
+}
+
+.simulador-container::before {
+  content: "";
+  position: fixed;
+  top: -150px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 800px;
+  height: 500px;
+  background: radial-gradient(ellipse,
+    rgba(240, 162, 2, 0.08) 0%,
+    rgba(240, 162, 2, 0.02) 40%,
+    transparent 70%);
+  filter: blur(60px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.simulador-container > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Slider do Simulador — accent dourado */
+.simulador-container input[type="range"] {
+  accent-color: #FFB20F !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   OBJETIVOS — grid de cards "Configurados" responsivo
+   Desktop: 2 colunas. Mobile (< 600px): coluna única.
+   ════════════════════════════════════════════════════════════════ */
+.objetivos-grid-2col {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 599px) {
+  .objetivos-grid-2col {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   AFFORDANCE DE SCROLL HORIZONTAL — gradient na borda direita,
+   só aparece quando há overflow real (mobile / telas estreitas).
+   Aplicar via className="pi-scroll-x" em qualquer wrapper com
+   overflow-x: auto (tabelas largas, listas horizontais, etc).
+   ════════════════════════════════════════════════════════════════ */
+.pi-scroll-x {
+  position: relative;
+}
+
+.pi-scroll-x::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 32px;
+  pointer-events: none;
+  background: linear-gradient(to right,
+    rgba(13, 19, 33, 0) 0%,
+    rgba(13, 19, 33, 0.55) 100%);
+  opacity: 0;
+  transition: opacity 0.18s ease;
+  border-top-right-radius: inherit;
+  border-bottom-right-radius: inherit;
+}
+
+/* Só mostra fade quando o wrapper rola horizontal de fato (mobile/estreito). */
+@media (max-width: 767px) {
+  .pi-scroll-x::after { opacity: 1; }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   CLIENTE FICHA — grids responsivos
+   Substitui gridTemplateColumns inline para permitir adaptação
+   por breakpoint (inline style sobrescreve !important do CSS).
+   ════════════════════════════════════════════════════════════════ */
+
+/* KPIs do header (4 cards: Rendimento, Rent, Meta, Δ vs Meta) */
+.cf-kpi-4col {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+@media (max-width: 767px) {
+  .cf-kpi-4col {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* 3 cards de fluxo (Sobra, Meta aporte, Aportado) */
+.cf-grid-3col {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+@media (max-width: 599px) {
+  .cf-grid-3col {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Calendar 12 meses (Jan a Dez) — 6 cols desktop, 4 cols tablet, 3 cols mobile */
+.cf-meses-6col {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+@media (max-width: 767px) {
+  .cf-meses-6col {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+@media (max-width: 480px) {
+  .cf-meses-6col {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* Reserva de emergência (1m / 3m / 6m) — mantém 3 cols, compacta no mobile */
+.cf-reserva-3col {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+@media (max-width: 480px) {
+  .cf-reserva-3col {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   CLIENTE FICHA — sticky tabs de seção (mobile only)
+   Visíveis em ≤ 900px. Ficam coladas abaixo da navbar (top: 64px).
+   No desktop ficam ocultas: o usuário usa a sidebar.
+   ════════════════════════════════════════════════════════════════ */
+
+.cf-sticky-tabs {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .cf-sticky-tabs {
+    display: flex;
+    position: sticky;
+    top: 64px;
+    z-index: 50;
+    background: rgba(9, 18, 34, 0.96);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 0.5px solid rgba(44, 74, 110, 0.45);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 2px;
+    padding: 0 8px;
+    margin: 0 -12px 16px;
+    scroll-snap-type: x mandatory;
+  }
+  .cf-sticky-tabs::-webkit-scrollbar { display: none; }
+}
+
+.cf-sticky-tab {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 10px 14px 8px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: #4e6580;
+  font-family: inherit;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  white-space: nowrap;
+  scroll-snap-align: start;
+  transition: color 0.18s ease, border-color 0.18s ease;
+  min-height: 52px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cf-sticky-tab:active {
+  transform: scale(0.94);
+}
+
+.cf-sticky-tab.active {
+  color: #F0A202;
+  border-bottom-color: #F0A202;
+}
+
+.cf-sticky-tab-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.cf-sticky-tab-label {
+  font-size: 8.5px;
+  letter-spacing: 0.05em;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   BOTTOM SHEET — modais se tornam sheets deslizando de baixo
+   Classe .pi-modal-overlay no backdrop, .pi-modal-sheet no card.
+   Desktop: comportamento original (centralizado).
+   Mobile (≤ 600px): anchora no fundo, borda superior arredondada.
+   ════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 600px) {
+  .pi-modal-overlay {
+    align-items: flex-end !important;
+    justify-content: stretch !important;
+    padding: 0 !important;
+  }
+
+  .pi-modal-sheet {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 24px 24px 0 0 !important;
+    max-height: 92vh !important;
+    overflow-y: auto !important;
+    padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)) !important;
+    animation: pi-sheet-up 0.28s cubic-bezier(0.34, 1.08, 0.64, 1);
+  }
+
+  @keyframes pi-sheet-up {
+    from { transform: translateY(60px); opacity: 0.6; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+}

@@ -1,0 +1,364 @@
+/* ═══════════════════════════════════════════════════════════════
+   EXTRATO — refresh visual escopado em .extrato-page
+   Inline classes próprias → CSS direto sem mexer no JSX.
+   ═══════════════════════════════════════════════════════════════ */
+
+.extrato-page {
+  position: relative;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 24px 60px;
+}
+
+/* Glow dourado decorativo no fundo */
+.extrato-page::before {
+  content: "";
+  position: absolute;
+  top: -80px;
+  right: -120px;
+  width: 480px;
+  height: 480px;
+  background: radial-gradient(circle,
+    rgba(240, 162, 2, 0.08) 0%,
+    rgba(240, 162, 2, 0.02) 40%,
+    transparent 70%);
+  filter: blur(60px);
+  pointer-events: none;
+  z-index: 0;
+}
+.extrato-page > * { position: relative; z-index: 1; }
+
+/* ────────────────────────────────────────────────────────────────
+   HERO
+   ──────────────────────────────────────────────────────────────── */
+.extrato-hero {
+  background:
+    radial-gradient(120% 100% at 100% 0%,
+      rgba(240, 162, 2, 0.10) 0%,
+      rgba(240, 162, 2, 0.03) 35%,
+      transparent 65%),
+    linear-gradient(160deg,
+      rgba(29, 45, 68, 0.92) 0%,
+      rgba(22, 34, 52, 0.92) 100%);
+  border: 0.5px solid rgba(240, 162, 2, 0.20);
+  border-radius: 20px;
+  padding: 28px 28px 24px;
+  margin-bottom: 22px;
+  box-shadow:
+    0 8px 28px rgba(0, 0, 0, 0.40),
+    0 0 0 1px rgba(255, 255, 255, 0.02) inset,
+    0 1px 0 rgba(255, 255, 255, 0.04) inset;
+}
+
+.extrato-hero-label {
+  font-size: 10.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #FFB20F;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.extrato-hero-title {
+  font-size: clamp(24px, 3.5vw, 32px);
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  color: #F0EBD8;
+  margin-bottom: 8px;
+  line-height: 1.2;
+}
+
+.extrato-hero-sub {
+  font-size: 13px;
+  color: #8aa0bb;
+  line-height: 1.6;
+  margin-bottom: 18px;
+}
+
+.extrato-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.extrato-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  height: 38px;
+  background: linear-gradient(135deg, #F0A202 0%, #FFB20F 100%);
+  border: none;
+  border-radius: 999px;
+  color: #0D1321;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease,
+              filter 0.18s ease;
+  box-shadow: 0 4px 14px rgba(240, 162, 2, 0.30);
+}
+.extrato-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px rgba(240, 162, 2, 0.45);
+  filter: brightness(1.05);
+}
+.extrato-btn.secondary {
+  background: rgba(255, 255, 255, 0.04);
+  border: 0.5px solid rgba(116, 140, 171, 0.30);
+  color: #b0bcd0;
+  box-shadow: none;
+  font-weight: 500;
+}
+.extrato-btn.secondary:hover {
+  background: rgba(240, 162, 2, 0.08);
+  border-color: rgba(240, 162, 2, 0.40);
+  color: #FFB20F;
+}
+
+/* ────────────────────────────────────────────────────────────────
+   RESUMO (cards de aportes/retiradas/rendimentos/saldo)
+   ──────────────────────────────────────────────────────────────── */
+.extrato-resumo {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.extrato-resumo-card {
+  background:
+    radial-gradient(120% 80% at 100% 0%,
+      rgba(255, 255, 255, 0.04) 0%,
+      transparent 55%),
+    linear-gradient(160deg,
+      rgba(29, 45, 68, 0.92) 0%,
+      rgba(22, 34, 52, 0.92) 100%);
+  border: 0.5px solid rgba(62, 92, 118, 0.30);
+  border-radius: 14px;
+  padding: 16px 18px;
+  box-shadow:
+    0 2px 10px rgba(0, 0, 0, 0.22),
+    0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+  transition: transform 0.18s ease, border-color 0.18s ease,
+              box-shadow 0.18s ease;
+}
+
+.extrato-resumo-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(240, 162, 2, 0.40);
+  box-shadow:
+    0 10px 26px rgba(0, 0, 0, 0.40),
+    0 0 22px rgba(240, 162, 2, 0.10);
+}
+
+.extrato-resumo-label {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #8aa0bb;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.extrato-resumo-value {
+  font-size: 22px;
+  font-weight: 300;
+  letter-spacing: -0.015em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.extrato-resumo-value.pos { color: #00CC66; text-shadow: 0 0 18px rgba(0, 204, 102, 0.20); }
+.extrato-resumo-value.neg { color: #ef4444; text-shadow: 0 0 18px rgba(239, 68, 68, 0.20); }
+.extrato-resumo-value.gold { color: #FFB20F; text-shadow: 0 0 18px rgba(240, 162, 2, 0.25); }
+
+/* ────────────────────────────────────────────────────────────────
+   TABS DE MÊS
+   ──────────────────────────────────────────────────────────────── */
+.extrato-mes-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+  padding: 4px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 0.5px solid rgba(62, 92, 118, 0.22);
+  border-radius: 12px;
+  overflow-x: auto;
+}
+
+.extrato-mes-tab {
+  background: transparent;
+  border: none;
+  color: #8aa0bb;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease;
+  white-space: nowrap;
+}
+.extrato-mes-tab:hover {
+  background: rgba(240, 162, 2, 0.06);
+  color: #F0EBD8;
+}
+.extrato-mes-tab.active {
+  background: linear-gradient(135deg,
+    rgba(240, 162, 2, 0.18) 0%,
+    rgba(240, 162, 2, 0.08) 100%);
+  color: #FFB20F;
+  box-shadow: 0 2px 8px rgba(240, 162, 2, 0.18);
+}
+
+/* ────────────────────────────────────────────────────────────────
+   TIMELINE de movimentações
+   ──────────────────────────────────────────────────────────────── */
+.extrato-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.extrato-row {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background: linear-gradient(160deg,
+    rgba(29, 45, 68, 0.65) 0%,
+    rgba(22, 34, 52, 0.65) 100%);
+  border: 0.5px solid rgba(62, 92, 118, 0.22);
+  border-radius: 12px;
+  transition: transform 0.18s ease, border-color 0.18s ease,
+              background 0.18s ease;
+}
+
+.extrato-row:hover {
+  transform: translateX(2px);
+  border-color: rgba(240, 162, 2, 0.30);
+}
+
+.extrato-row-ico {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.06) 0%,
+    rgba(255, 255, 255, 0.02) 100%);
+  border: 0.5px solid rgba(116, 140, 171, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.extrato-row-label {
+  font-size: 13.5px;
+  color: #F0EBD8;
+  font-weight: 500;
+  margin-bottom: 4px;
+  letter-spacing: -0.005em;
+}
+
+.extrato-row-sub {
+  font-size: 11px;
+  color: #748CAB;
+  letter-spacing: 0.02em;
+}
+
+.extrato-row-value {
+  font-size: 15px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* Cores das linhas por tipo (sinal + cor) */
+.extrato-row.aporte .extrato-row-value,
+.extrato-row.dividendo .extrato-row-value,
+.extrato-row.juros .extrato-row-value,
+.extrato-row.amortizacao .extrato-row-value {
+  color: #00CC66;
+}
+.extrato-row.retirada .extrato-row-value,
+.extrato-row.venda .extrato-row-value {
+  color: #ef4444;
+}
+.extrato-row.compra .extrato-row-value,
+.extrato-row.reforco .extrato-row-value {
+  color: #FFB20F;
+}
+
+/* ────────────────────────────────────────────────────────────────
+   EMPTY STATE
+   ──────────────────────────────────────────────────────────────── */
+.extrato-empty {
+  text-align: center;
+  padding: 60px 30px;
+  background: linear-gradient(160deg,
+    rgba(29, 45, 68, 0.5) 0%,
+    rgba(22, 34, 52, 0.5) 100%);
+  border: 0.5px dashed rgba(62, 92, 118, 0.35);
+  border-radius: 16px;
+}
+
+/* ────────────────────────────────────────────────────────────────
+   MOBILE
+   ──────────────────────────────────────────────────────────────── */
+@media (max-width: 599px) {
+  .extrato-page { padding: 16px 14px 50px; }
+  .extrato-hero { padding: 22px 18px 18px; }
+  .extrato-resumo { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .extrato-resumo-card { padding: 12px 14px; }
+  .extrato-row {
+    padding: 12px 14px 12px 16px;
+    gap: 10px;
+    grid-template-columns: 36px 1fr auto;
+  }
+  .extrato-row-ico { width: 32px; height: 32px; font-size: 14px; }
+  .extrato-row-label { font-size: 13px; }
+  .extrato-row-sub { font-size: 10.5px; }
+  .extrato-row-value { font-size: 14px; }
+  /* Tabs de mês: chip menor, scroll horizontal natural */
+  .extrato-mes-tabs { gap: 6px; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
+  .extrato-mes-tab { font-size: 11px !important; padding: 7px 12px !important; flex-shrink: 0; }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   Identidade visual por tipo: borda colorida à esquerda + sombra
+   sutil. Aplica em qualquer largura, mas é especialmente útil no
+   mobile pra escanear o extrato visualmente sem ler.
+   ════════════════════════════════════════════════════════════════ */
+.extrato-row {
+  border-left-width: 3px !important;
+}
+.extrato-row.aporte,
+.extrato-row.dividendo,
+.extrato-row.juros,
+.extrato-row.amortizacao {
+  border-left-color: #16a34a !important;
+}
+.extrato-row.retirada,
+.extrato-row.venda {
+  border-left-color: #dc2626 !important;
+}
+.extrato-row.compra,
+.extrato-row.reforco {
+  border-left-color: #FFB20F !important;
+}
+.extrato-row.taxa {
+  border-left-color: #94a3b8 !important;
+}
+.extrato-row.vencimento {
+  border-left-color: #64748b !important;
+}
+.extrato-row.vencimento .extrato-row-value {
+  color: #94a3b8 !important;
+}

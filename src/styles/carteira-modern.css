@@ -1,0 +1,178 @@
+/* ═══════════════════════════════════════════════════════════════
+   CARTEIRA — Tabela de classes modernizada
+   Aplica apenas dentro de .pi-carteira-table (escopo seguro).
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Container da tabela — sombra + glassmorphism sutil */
+.pi-carteira-table {
+  background:
+    radial-gradient(120% 80% at 100% 0%,
+      rgba(240, 162, 2, 0.04) 0%,
+      transparent 55%),
+    linear-gradient(160deg,
+      rgba(29, 45, 68, 0.92) 0%,
+      rgba(22, 34, 52, 0.92) 100%) !important;
+  border: 0.5px solid rgba(62, 92, 118, 0.30) !important;
+  border-radius: 16px !important;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.30),
+    0 0 0 1px rgba(255, 255, 255, 0.02) inset !important;
+}
+
+/* Header da tabela — eyebrow style */
+.pi-carteira-table > div > div:first-child {
+  background: rgba(255, 255, 255, 0.025);
+  letter-spacing: 0.16em !important;
+  padding: 14px 20px !important;
+  border-bottom: 0.5px solid rgba(62, 92, 118, 0.35) !important;
+}
+
+/* Linhas — hover com lift sutil + scale */
+.pi-carteira-table > div > div:not(:first-child) {
+  position: relative;
+  padding: 18px 20px !important;
+  transition:
+    background-color 0.18s ease,
+    transform 0.18s ease,
+    border-color 0.18s ease !important;
+  border-bottom: 0.5px solid rgba(62, 92, 118, 0.18) !important;
+}
+
+.pi-carteira-table > div > div:not(:first-child):hover {
+  transform: translateX(2px);
+}
+
+.pi-carteira-table > div > div:last-child {
+  border-bottom: none !important;
+}
+
+/* Barra colorida vertical à esquerda — mais grossa e com glow */
+.pi-carteira-table > div > div:not(:first-child) > div:first-child > div:first-child {
+  width: 4px !important;
+  height: 32px !important;
+  border-radius: 4px !important;
+  box-shadow: 0 0 8px currentColor !important;
+}
+
+/* Pill de objetivo — mais arredondada */
+.pi-carteira-table span[style*="rgba(240,162,2,0.08)"] {
+  border-radius: 999px !important;
+  padding: 4px 10px !important;
+  font-weight: 500 !important;
+  background: rgba(240, 162, 2, 0.10) !important;
+  border-color: rgba(240, 162, 2, 0.32) !important;
+}
+
+/* Barra de progresso final da linha — mais visível */
+.pi-carteira-table > div > div:not(:first-child) > div:last-child[style*="height: 2px"],
+.pi-carteira-table > div > div:not(:first-child) > div[style*="gridColumn"] {
+  height: 3px !important;
+  margin-top: 14px !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-radius: 2px !important;
+}
+
+/* Scrollbar custom dentro da tabela */
+.pi-carteira-table::-webkit-scrollbar { height: 6px; }
+.pi-carteira-table::-webkit-scrollbar-track { background: transparent; }
+.pi-carteira-table::-webkit-scrollbar-thumb {
+  background: rgba(240, 162, 2, 0.20);
+  border-radius: 3px;
+}
+.pi-carteira-table::-webkit-scrollbar-thumb:hover {
+  background: rgba(240, 162, 2, 0.40);
+}
+
+/* Mobile */
+@media (max-width: 599px) {
+  .pi-carteira-table > div > div:not(:first-child) {
+    padding: 14px 16px !important;
+  }
+  .pi-carteira-table > div > div:first-child {
+    padding: 12px 16px !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   HERO KPIs — densidade adaptativa
+   3 cards (Patrimônio / Performance / Aporte) ficam compactos
+   em mobile sem perder legibilidade dos valores principais.
+   ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 720px) {
+  /* Cards do hero: padding menor, fonte do label/sub menores */
+  .carteira-kpis > div {
+    padding: 11px 13px !important;
+    gap: 6px !important;
+  }
+  .carteira-kpis > div > div:first-child {
+    /* label */
+    font-size: 8.5px !important;
+    letter-spacing: 0.10em !important;
+  }
+  /* Valor principal: ainda destacado, mas menor */
+  .carteira-kpis > div > div[style*="font-size: 20px"],
+  .carteira-kpis > div > div[style*="fontSize: 20"] {
+    font-size: 16px !important;
+  }
+  /* Sub-grids dentro do card de Performance: 3 colunas mais apertadas */
+  .carteira-kpis > div > div[style*="grid-template-columns"] {
+    gap: 6px !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CARDS DO CHART HISTÓRICO — contraste passado vs. atual
+   Aplica a refinamento Itaú-style: meses passados muito sutis,
+   mês atual com glow ouro forte.
+   ═══════════════════════════════════════════════════════════════ */
+.pi-hist-card-passado {
+  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.005)) !important;
+  border-color: rgba(62,92,118,0.22) !important;
+}
+.pi-hist-card-atual {
+  background: linear-gradient(180deg, rgba(240,162,2,0.18), rgba(240,162,2,0.04)) !important;
+  border-color: rgba(240,162,2,0.55) !important;
+  box-shadow: 0 6px 20px rgba(240,162,2,0.10), 0 0 0 1px rgba(240,162,2,0.10) inset !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   IDENTIDADE VISUAL: Reserva (azul) e Objetivos (verde)
+   Diferencia das seções douradas da Carteira.
+   ═══════════════════════════════════════════════════════════════ */
+.pi-card-reserva {
+  background:
+    radial-gradient(120% 80% at 0% 0%,
+      rgba(96, 165, 250, 0.08) 0%,
+      transparent 55%),
+    linear-gradient(160deg,
+      rgba(29, 45, 68, 0.92) 0%,
+      rgba(22, 34, 52, 0.92) 100%) !important;
+  border-color: rgba(96, 165, 250, 0.28) !important;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.30),
+    0 0 0 1px rgba(96, 165, 250, 0.08) inset !important;
+}
+
+.pi-card-objetivo {
+  background:
+    radial-gradient(120% 80% at 100% 0%,
+      rgba(34, 197, 94, 0.08) 0%,
+      transparent 55%),
+    linear-gradient(160deg,
+      rgba(29, 45, 68, 0.92) 0%,
+      rgba(22, 34, 52, 0.92) 100%) !important;
+  border-left: 3px solid #22c55e !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   COMPOSIÇÃO MOBILE — alterna tabela ↔ cards verticais
+   Em ≤720px a tabela com scroll horizontal vira stack de cards.
+   ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 720px) {
+  .pi-carteira-table-desktop {
+    display: none !important;
+  }
+  .pi-carteira-cards-mobile {
+    display: flex !important;
+  }
+}

@@ -1,0 +1,138 @@
+/* ═══════════════════════════════════════════════════════════════
+   DonutChartModern — gráfico de rosca premium
+   ═══════════════════════════════════════════════════════════════ */
+
+.pi-donut-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.pi-donut-centro {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.pi-donut-label {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #8aa0bb;
+  font-weight: 600;
+  margin-bottom: 6px;
+  transition: opacity 0.25s ease;
+  font-family: -apple-system, "SF Pro Display", "Helvetica Neue", sans-serif;
+  white-space: nowrap;
+  max-width: 90%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pi-donut-valor {
+  font-size: clamp(20px, 4.5vw, 28px);
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  font-family: -apple-system, "SF Pro Display", "Helvetica Neue", sans-serif;
+  text-shadow: 0 0 24px currentColor;
+}
+
+.pi-donut-pct {
+  font-size: 11px;
+  color: #748CAB;
+  font-weight: 500;
+  margin-top: 4px;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  font-family: -apple-system, "SF Pro Display", "Helvetica Neue", sans-serif;
+}
+
+/* Empty state */
+.pi-donut-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border-radius: 50%;
+  border: 0.5px dashed rgba(116, 140, 171, 0.30);
+  background: rgba(255, 255, 255, 0.02);
+  user-select: none;
+}
+.pi-donut-empty-icon {
+  font-size: 32px;
+  opacity: 0.6;
+}
+.pi-donut-empty-text {
+  font-size: 11px;
+  color: #748CAB;
+  letter-spacing: 0.04em;
+  font-family: -apple-system, "SF Pro Display", sans-serif;
+}
+
+/* ────────────────────────────────────────────────────────────────
+   Legenda lateral/inferior — uso opcional
+   <DonutLegend items={[...]} hoverKey={...} onHover={...} />
+   ──────────────────────────────────────────────────────────────── */
+.pi-donut-legenda {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: -apple-system, "SF Pro Display", sans-serif;
+}
+
+.pi-donut-leg-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background-color 0.18s ease, transform 0.18s ease;
+  font-size: 12.5px;
+  color: #b0bcd0;
+}
+.pi-donut-leg-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+  transform: translateX(2px);
+}
+.pi-donut-leg-item-active {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.pi-donut-leg-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 8px currentColor;
+}
+
+.pi-donut-leg-label {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pi-donut-leg-valor {
+  font-weight: 500;
+  color: #F0EBD8;
+  font-variant-numeric: tabular-nums;
+}
+
+.pi-donut-leg-pct {
+  font-size: 11px;
+  color: #748CAB;
+  font-variant-numeric: tabular-nums;
+  min-width: 42px;
+  text-align: right;
+}
