@@ -23,7 +23,7 @@ import { ROLES } from "../constants/roles";
  */
 function rotaInicialPorPapel(role, profile) {
   if (role === ROLES.MASTER || role === ROLES.ASSESSOR) return "/dashboard";
-  if (role === ROLES.CLIENTE && profile?.clienteId) return `/cliente/${profile.clienteId}`;
+  if (role === ROLES.CLIENTE && profile?.clienteId) return "/me/home";
   return "/";
 }
 
@@ -60,7 +60,7 @@ export function ProtectedRoute({ children, roles, ownerOnly = false }) {
       return <Navigate to="/" replace />;
     }
     if (idDaUrl && idDaUrl !== profile.clienteId) {
-      return <Navigate to={`/cliente/${profile.clienteId}`} replace />;
+      return <Navigate to="/me/home" replace />;
     }
   }
 

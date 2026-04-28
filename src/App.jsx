@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import EmDesenvolvimento from "./pages/EmDesenvolvimento";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import MeRedirect from "./components/MeRedirect";
 import { ROLES } from "./constants/roles";
 import WhatsAppButton from "./components/WhatsAppButton";
 import AssessorOnboardingModal from "./components/AssessorOnboardingModal";
@@ -48,6 +49,18 @@ function App() {
       <Suspense fallback={<LoadingPage />}>
         <Routes>
           <Route path="/" element={<Login />} />
+
+          {/* Namespace /me/* — porta de entrada do cliente.
+              Cada rota resolve para /cliente/{profile.clienteId}/...
+              Fases 4–6 substituirão cada redirect por página dedicada. */}
+          <Route path="/me"            element={<Guard element={<MeRedirect />} />} />
+          <Route path="/me/home"       element={<Guard element={<MeRedirect />} />} />
+          <Route path="/me/objetivos"  element={<Guard element={<MeRedirect subpath="objetivos" />} />} />
+          <Route path="/me/carteira"   element={<Guard element={<MeRedirect subpath="carteira" />} />} />
+          <Route path="/me/fluxo"      element={<Guard element={<MeRedirect subpath="fluxo" />} />} />
+          <Route path="/me/extrato"    element={<Guard element={<MeRedirect subpath="extrato" />} />} />
+          <Route path="/me/diagnostico" element={<Guard element={<MeRedirect subpath="diagnostico" />} />} />
+          <Route path="/me/simulador"  element={<Guard element={<MeRedirect subpath="simulador" />} />} />
 
           <Route path="/dashboard" element={<Guard roles={INTERNO} element={<Dashboard />} />} />
           <Route path="/cliente/:id" element={<Guard ownerOnly element={<ClienteFicha />} />} />

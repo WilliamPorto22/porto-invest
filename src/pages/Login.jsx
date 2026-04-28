@@ -74,7 +74,7 @@ export default function Login() {
           profileData = snap.data();
           if (profileData.mustResetPassword) destino = "/reset-password";
           else if (profileData.role === "cliente" && profileData.clienteId)
-            destino = `/cliente/${profileData.clienteId}`;
+            destino = "/me/home";
         }
       } catch { /* falha ao ler users — segue pro dashboard */ }
       // Registra evento de login no histórico
