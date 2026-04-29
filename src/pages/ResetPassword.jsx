@@ -137,6 +137,10 @@ export default function ResetPassword() {
     );
   }
 
+  // O wrapper `.reset-wrap` tem min-height:100vh !important e background
+  // próprio (reset-modern.css). Não dá pra reutilizá-lo dentro do
+  // dashboard-content sem criar scroll duplo / cor diferente. Por isso
+  // renderizamos só o `.reset-card` aqui, centralizado por flex local.
   return (
     <div className="dashboard-container has-sidebar">
       <Sidebar
@@ -145,12 +149,13 @@ export default function ResetPassword() {
         clienteNome={isCliente ? profile?.nome : null}
       />
       <Navbar showLogout={true} />
-      <div className="dashboard-content with-sidebar cliente-zoom" style={{ maxWidth: 1280, margin: "0 auto", padding: "28px 28px 60px" }}>
-        <div className="reset-wrap" style={{ minHeight: "auto", paddingTop: 20 }}>
-          <form onSubmit={handleSubmit} className="reset-card">
-            {renderFormBody()}
-          </form>
-        </div>
+      <div
+        className="dashboard-content with-sidebar cliente-zoom"
+        style={{ maxWidth: 1280, margin: "0 auto", padding: "28px 28px 60px", display: "flex", justifyContent: "center" }}
+      >
+        <form onSubmit={handleSubmit} className="reset-card" style={{ marginTop: 20 }}>
+          {renderFormBody()}
+        </form>
       </div>
     </div>
   );

@@ -2819,6 +2819,14 @@ export default function ClienteFicha() {
                 input. Os campos no Firestore continuam (não removidos),
                 mantendo compatibilidade com Diagnóstico/Dashboard. */}
 
+            {/* Cliente final só edita os dados cadastrais (seções 1–3 +
+                Salvar/Trocar senha). Patrimônio imobiliário, veículos,
+                proteção, modelo de atendimento e objetivos de interesse
+                continuam sendo editáveis pelo assessor — para o cliente
+                ficaria visualmente sobrecarregado e a maioria desses dados
+                vem natural de outras telas (Carteira, Objetivos, Fluxo). */}
+            {!isCliente && (
+              <>
             {/* ═══ SEÇÃO 4: PATRIMÔNIO IMOBILIÁRIO ═════════════════════ */}
             <SectionTitle numero={4} total={8} icon="🏡" subtitle="Casa, apartamento, terreno, sítio ou imóvel comercial em seu nome.">Patrimônio Imobiliário</SectionTitle>
 
@@ -3055,44 +3063,18 @@ export default function ClienteFicha() {
                 → Detalhar objetivos selecionados
               </button>
             )}
+              </>
+            )}
 
             <button onClick={salvar} disabled={salvando} style={{...C.btnPrimary,marginTop:20}}>
               {salvando?"Salvando...":(id==="novo"?"Cadastrar cliente e gerar diagnóstico":"Salvar alterações")}
             </button>
 
-            {/* Trocar minha senha. Atalho dedicado pra o cliente final.
-                O assessor já tem o botão "Trocar senha" na navbar (showLogout=true)
-                e não troca senha do cliente. Só faz sentido pro cliente aqui. */}
-            {isCliente && id !== "novo" && (
-              <button
-                type="button"
-                onClick={()=>navigate("/reset-password")}
-                style={{
-                  marginTop:12,
-                  width:"100%",
-                  padding:"13px",
-                  background:"rgba(25,130,196,0.08)",
-                  border:"0.5px solid rgba(25,130,196,0.32)",
-                  borderRadius:11,
-                  color:"#7FB3E0",
-                  fontSize:12,
-                  cursor:"pointer",
-                  fontFamily:"inherit",
-                  letterSpacing:"0.06em",
-                  fontWeight:600,
-                  textTransform:"uppercase",
-                  display:"flex",
-                  alignItems:"center",
-                  justifyContent:"center",
-                  gap:8,
-                }}
-              >
-                <span aria-hidden="true">🔒</span>
-                Trocar minha senha
-              </button>
-            )}
+            {/* "Trocar minha senha" do cliente foi movido para o item 11 da
+                sidebar — fica disponível em todas as páginas, não precisa
+                duplicar dentro do formulário de Editar Perfil. */}
 
-            {id!=="novo"&&(
+            {id!=="novo"&&!isCliente&&(
               <div style={{marginTop:40,paddingTop:24,borderTop:`0.5px solid ${T.border}`,textAlign:"center",display:"flex",flexDirection:"column",alignItems:"center"}}>
                 <div style={{fontSize:10,color:T.textMuted,textTransform:"uppercase",letterSpacing:"0.14em",marginBottom:10,fontWeight:600}}>Zona de risco</div>
                 <div style={{fontSize:12,color:T.textSecondary,marginBottom:14,lineHeight:1.5,maxWidth:440}}>
