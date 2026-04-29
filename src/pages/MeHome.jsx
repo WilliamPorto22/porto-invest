@@ -9,6 +9,7 @@ import { Sidebar } from "../components/Sidebar";
 import { Navbar } from "../components/Navbar";
 import { perfilCompleto } from "../utils/perfilCompleto";
 import ChecklistOnboardingCliente from "../components/cliente/ChecklistOnboardingCliente";
+import PatrimonioConsolidadoCliente from "../components/cliente/PatrimonioConsolidadoCliente";
 
 /**
  * MeHome — Página inicial dedicada do cliente.
@@ -95,16 +96,21 @@ export default function MeHome() {
     <div className="dashboard-container has-sidebar">
       <Sidebar mode="cliente" clienteId={clienteId} />
       <Navbar />
-      <div className="dashboard-content with-sidebar">
-        <div style={{ maxWidth: 1180, margin: "0 auto", padding: "20px 16px 48px" }}>
-          {!status.completo && (
-            <ChecklistOnboardingCliente
-              status={status}
-              primeiroNome={(cliente?.nome || "").split(" ")[0] || ""}
-            />
-          )}
-          <HomeLiberdade cliente={cliente} clienteId={clienteId} />
-        </div>
+      {/* Container padronizado — mesma largura/padding usados em
+          Carteira, Diagnóstico e ClienteFicha (cliente-zoom + maxWidth 1280)
+          para que toda navegação do cliente tenha bordas consistentes. */}
+      <div
+        className="dashboard-content with-sidebar cliente-zoom"
+        style={{ maxWidth: 1280, margin: "0 auto", padding: "28px 28px 60px" }}
+      >
+        {!status.completo && (
+          <ChecklistOnboardingCliente
+            status={status}
+            primeiroNome={(cliente?.nome || "").split(" ")[0] || ""}
+          />
+        )}
+        <HomeLiberdade cliente={cliente} clienteId={clienteId} />
+        <PatrimonioConsolidadoCliente cliente={cliente} />
       </div>
     </div>
   );
