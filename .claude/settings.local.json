@@ -58,7 +58,8 @@
       "Bash(git merge *)",
       "Bash(git -c user.email=williamporto0@gmail.com -c user.name=\"William Porto\" commit -m \"fase 2: criar namespace /me/* — cliente nunca digita id na URL\")",
       "Bash(git -c user.email=williamporto0@gmail.com -c user.name=\"William Porto\" commit -m \"fase 3: remover blocos Renda/Gastos/Aportes e Patrimonio Financeiro do cadastro \\(total 10 -> 8 secoes\\)\")",
-      "Bash(git -c user.email=williamporto0@gmail.com -c user.name=\"William Porto\" commit -m \"fase 4: pagina /me/home dedicada com HomeLiberdade isolada + menu cliente apontando para /me/*\")"
+      "Bash(git -c user.email=williamporto0@gmail.com -c user.name=\"William Porto\" commit -m \"fase 4: pagina /me/home dedicada com HomeLiberdade isolada + menu cliente apontando para /me/*\")",
+      "Bash(git -c user.email=williamporto0@gmail.com -c user.name=\"William Porto\" commit -m \"fase 5: gating do Diagnostico ate perfil completo + checklist no topo da MeHome\")"
     ]
   }
 }

@@ -7,6 +7,8 @@ import { db } from "../firebase";
 import HomeLiberdade from "../components/cliente/HomeLiberdade";
 import { Sidebar } from "../components/Sidebar";
 import { Navbar } from "../components/Navbar";
+import { perfilCompleto } from "../utils/perfilCompleto";
+import ChecklistOnboardingCliente from "../components/cliente/ChecklistOnboardingCliente";
 
 /**
  * MeHome — Página inicial dedicada do cliente.
@@ -81,12 +83,26 @@ export default function MeHome() {
     );
   }
 
+  // Gating do Diagnóstico: enquanto perfil incompleto, esconde do menu.
+  // Persiste em localStorage para o Sidebar (que não tem o doc do cliente)
+  // ler sem precisar de outro fetch.
+  const status = perfilCompleto(cliente);
+  try {
+    localStorage.setItem(`porto_perfil_completo_${clienteId}`, status.completo ? "1" : "0");
+  } catch { /* localStorage indisponível, segue */ }
+
   return (
     <div className="dashboard-container has-sidebar">
       <Sidebar mode="cliente" clienteId={clienteId} />
       <Navbar />
       <div className="dashboard-content with-sidebar">
         <div style={{ maxWidth: 1180, margin: "0 auto", padding: "20px 16px 48px" }}>
+          {!status.completo && (
+            <ChecklistOnboardingCliente
+              status={status}
+              primeiroNome={(cliente?.nome || "").split(" ")[0] || ""}
+            />
+          )}
           <HomeLiberdade cliente={cliente} clienteId={clienteId} />
         </div>
       </div>

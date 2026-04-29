@@ -475,9 +475,17 @@ export function Sidebar({ mode = "admin", clienteId = null, clienteNome = null }
   const menu = useMemo(() => {
     if (mode === "cliente" && clienteId) {
       // Cliente final → menu enxuto (5 páginas + Editar Perfil).
+      // Diagnóstico só aparece quando o perfil estiver completo (gating
+      // calculado em MeHome via perfilCompleto() e persistido em localStorage).
       // Assessor/master visitando o cliente → menu completo com atalhos
       // de #anchor para os accordions, útil pra atendimento.
-      if (isCliente) return buildMenuClienteFinal(clienteId);
+      if (isCliente) {
+        let perfilOk = false;
+        try { perfilOk = localStorage.getItem(`porto_perfil_completo_${clienteId}`) === "1"; }
+        catch { /* localStorage indisponível */ }
+        const m = buildMenuClienteFinal(clienteId);
+        return perfilOk ? m : m.filter(it => it.id !== "diag");
+      }
       return buildMenuCliente(clienteId);
     }
     // Master vê tudo + item de Administrador (usuários) + Monitor Online;

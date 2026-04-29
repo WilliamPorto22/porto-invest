@@ -39,6 +39,18 @@ export default function MeRedirect({ subpath = "" }) {
     return <Navigate to="/" replace />;
   }
 
+  // Gating do Diagnóstico — perfil precisa estar completo.
+  // Status é populado em MeHome via perfilCompleto(). Se cliente digitar
+  // /me/diagnostico direto sem completar, manda pra /me/home com flag.
+  if (subpath === "diagnostico") {
+    let perfilOk = false;
+    try { perfilOk = localStorage.getItem(`porto_perfil_completo_${clienteId}`) === "1"; }
+    catch { /* localStorage indisponível, considera incompleto */ }
+    if (!perfilOk) {
+      return <Navigate to="/me/home?perfilIncompleto=1" replace />;
+    }
+  }
+
   const destino = subpath
     ? `/cliente/${clienteId}/${subpath}`
     : `/cliente/${clienteId}`;
