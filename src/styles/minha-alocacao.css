@@ -505,29 +505,40 @@
   color: #60a5fa;
   font-weight: 600;
 }
-.ma-prio-acoes { display: flex; gap: 8px; flex-wrap: wrap; }
+.ma-prio-acoes {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: auto;        /* gruda no fundo do card → todos os botões alinhados */
+  padding-top: 4px;
+}
+.ma-prio-acoes .ma-acao-btn { width: 100%; }
 
 /* ─── Botões de ação ────────────────────────────────────────────── */
 .ma-acao-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  padding: 8px 16px;
+  padding: 9px 18px;
   border-radius: 8px;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   text-decoration: none;
   cursor: pointer;
   border: 1px solid transparent;
   transition: all 0.18s ease;
+  letter-spacing: 0.02em;
 }
 .ma-acao-btn.primary {
-  background: #25D366;
-  color: white;
+  background: rgba(37, 211, 102, 0.10);
+  border-color: rgba(37, 211, 102, 0.32);
+  color: #25D366;
 }
 .ma-acao-btn.primary:hover {
-  background: #1fb755;
-  transform: translateY(-1px);
+  background: rgba(37, 211, 102, 0.18);
+  border-color: rgba(37, 211, 102, 0.5);
 }
 .ma-acao-btn.ghost {
   background: rgba(37, 211, 102, 0.10);

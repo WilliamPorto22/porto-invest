@@ -39,11 +39,11 @@ const TOLERANCIA_POR_PERFIL = { conservador: 3, moderado: 5, agressivo: 8 };
 
 // Frases rotativas — variam por semana do ano para soar fresco a cada visita.
 const MARATHON_QUOTES = [
-  { quote: "Investimentos não são uma corrida de 100 metros — são uma maratona.", author: "" },
+  { quote: "Investimentos não são uma corrida de 100 metros, são uma maratona.", author: "" },
   { quote: "O mercado é um mecanismo que transfere dinheiro dos impacientes para os pacientes.", author: "Warren Buffett" },
   { quote: "Tempo dentro do mercado vale mais que tentar acertar o tempo do mercado.", author: "" },
-  { quote: "A grande riqueza vem dos juros compostos — não das jogadas geniais.", author: "" },
-  { quote: "Comprar boas empresas e segurar — esse é o segredo. O resto é ruído.", author: "Luiz Barsi" },
+  { quote: "A grande riqueza vem dos juros compostos, não das jogadas geniais.", author: "" },
+  { quote: "Comprar boas empresas e segurar. Esse é o segredo. O resto é ruído.", author: "Luiz Barsi" },
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -501,7 +501,7 @@ export default function MinhaAlocacao({ clienteIdOverride = null, mostrarVoltar 
         )}
         {reserva && reserva.ok && (
           <div className="ma-reserva-ok">
-            Reserva de emergência completa: {brlFmt(reserva.atual)} — você está protegido para imprevistos.
+            Reserva de emergência completa: {brlFmt(reserva.atual)}. Você está protegido para imprevistos.
           </div>
         )}
 
@@ -601,11 +601,11 @@ export default function MinhaAlocacao({ clienteIdOverride = null, mostrarVoltar 
               {/* Maratona — frase rotativa por semana */}
               <div className="ma-marathon-box">
                 <p className="ma-marathon-quote">"{quoteAtual.quote}"</p>
-                {quoteAtual.author && <p className="ma-marathon-author">— {quoteAtual.author}</p>}
+                {quoteAtual.author && <p className="ma-marathon-author">{quoteAtual.author}</p>}
                 <p className="ma-marathon-text">
                   Vamos construir sua jornada financeira com consistência, aproveitando as melhores
                   oportunidades de cada momento de mercado. Mês a mês ajustamos sua carteira sem pressa
-                  — sempre alinhados com seus objetivos.
+                  Sempre alinhados com seus objetivos.
                 </p>
               </div>
             </div>
@@ -670,7 +670,7 @@ export default function MinhaAlocacao({ clienteIdOverride = null, mostrarVoltar 
                         <p className="ma-prio-acao">
                           <strong>Plano:</strong>{" "}
                           {over
-                            ? `Direcionar os próximos aportes para outras classes até reduzir essa exposição. Sem vender no momento — só esperar a carteira crescer no resto.`
+                            ? `Direcionar os próximos aportes para outras classes até reduzir essa exposição. Sem vender no momento. Basta esperar a carteira crescer no resto.`
                             : `Direcionar os próximos aportes para ${p.label} quando aparecerem boas oportunidades neste segmento.`
                           }
                         </p>
@@ -705,8 +705,8 @@ export default function MinhaAlocacao({ clienteIdOverride = null, mostrarVoltar 
           <section className="ma-section">
             <h2 className="ma-section-title">Recomendações para sua Carteira</h2>
             <p className="ma-secao-intro">
-              Análise dos indicadores fundamentalistas dos ativos que você já possui. <strong>Não são ordens de compra ou venda</strong> —
-              são pontos de discussão para a próxima reunião com seu assessor.
+              Análise dos indicadores fundamentalistas dos ativos que você já possui. <strong>Não são ordens de compra ou venda.</strong>{" "}
+              São pontos de discussão para a próxima reunião com seu assessor.
             </p>
 
             <div className="ma-sinais-grid">
