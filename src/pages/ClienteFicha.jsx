@@ -2587,7 +2587,7 @@ export default function ClienteFicha() {
             )}
 
             {/* ═══ SEÇÃO 1: IDENTIFICAÇÃO ═══════════════════════════ */}
-            <SectionTitle numero={1} total={10} icon="👤" subtitle="Comece com os dados básicos. Rápido — leva menos de 1 minuto.">Identificação</SectionTitle>
+            <SectionTitle numero={1} total={8} icon="👤" subtitle="Comece com os dados básicos. Rápido — leva menos de 1 minuto.">Identificação</SectionTitle>
 
             {/* Avatar */}
             <div style={{marginBottom:28}}>
@@ -2711,7 +2711,7 @@ export default function ClienteFicha() {
             </div>
 
             {/* ═══ SEÇÃO 2: FAMÍLIA ═════════════════════════════════ */}
-            <SectionTitle numero={2} total={10} icon="👨‍👩‍👧" subtitle="Cônjuge, filhos e pets. Ajuda a planejar sucessão, seguros e educação.">Família e Dependentes</SectionTitle>
+            <SectionTitle numero={2} total={8} icon="👨‍👩‍👧" subtitle="Cônjuge, filhos e pets. Ajuda a planejar sucessão, seguros e educação.">Família e Dependentes</SectionTitle>
 
             <div style={{marginBottom:28}}>
               <div style={{fontSize:13,color:T.textSecondary,marginBottom:14,textAlign:"center",...noEdit}}>Estado civil</div>
@@ -2789,7 +2789,7 @@ export default function ClienteFicha() {
             )}
 
             {/* ═══ SEÇÃO 3: LOCALIZAÇÃO & PERFIL ═════════════════════ */}
-            <SectionTitle numero={3} total={10} icon="📍" subtitle="Onde você mora, sua profissão e seus hobbies.">Localização e Perfil</SectionTitle>
+            <SectionTitle numero={3} total={8} icon="📍" subtitle="Onde você mora, sua profissão e seus hobbies.">Localização e Perfil</SectionTitle>
 
             <div style={{display:"grid",gridTemplateColumns:"repeat(2, minmax(0, 1fr))",gap:12,marginBottom:20}}>
               <div>
@@ -2810,70 +2810,17 @@ export default function ClienteFicha() {
               </div>
             </div>
 
-            {/* ═══ SEÇÃO 4: DADOS FINANCEIROS ═════════════════════════ */}
-            <SectionTitle numero={4} total={10} icon="💰" subtitle="Fotografia do seu fluxo mensal. Quanto entra, quanto sai, quanto sobra.">Renda, Gastos e Aportes</SectionTitle>
+            {/* SEÇÕES 4–5 (Renda/Gastos/Aportes e Patrimônio Financeiro) removidas
+                em 28/04/2026. Esses números agora vêm automaticamente:
+                  - Renda/Gastos/Aporte → da página Fluxo Mensal (lançamentos reais)
+                  - Patrimônio Financeiro → da Carteira (soma dos Ativos)
+                  - Liquidez diária   → categoria específica em Carteira
+                Cliente preenche onde o dado naturalmente vive, sem duplicar
+                input. Os campos no Firestore continuam (não removidos),
+                mantendo compatibilidade com Diagnóstico/Dashboard. */}
 
-            <div style={{display:"grid",gridTemplateColumns:"repeat(2, minmax(0, 1fr))",gap:12,marginBottom:20}}>
-              <div>
-                <Lbl>Renda / Salário médio mensal</Lbl>
-                <InputMoeda key={`sal-${id}`} initValue={snap.salarioMensal} onCommit={v=>setFSnap("salarioMensal",v)}/>
-              </div>
-              <div>
-                <Lbl>Gastos médios mensais</Lbl>
-                <InputMoeda key={`gasp-${id}`} initValue={snap.gastosMensaisManual||String(Math.round(gastosSync*100))} onCommit={v=>setFSnap("gastosMensaisManual",v)}/>
-              </div>
-              <div>
-                <Lbl>Aporte médio que tem feito</Lbl>
-                <InputMoeda key={`apmed-${id}`} initValue={snap.aporteMedio} onCommit={v=>setFSnap("aporteMedio",v)}/>
-              </div>
-              <div>
-                <Lbl>Meta de aporte mensal</Lbl>
-                <InputMoeda key={`meta-${id}`} initValue={snap.metaAporteMensal} onCommit={v=>setFSnap("metaAporteMensal",v)}/>
-              </div>
-              <div style={{gridColumn:"1/-1",maxWidth:320,margin:"0 auto",width:"100%"}}>
-                <Lbl>Dia do mês em que costuma aportar?</Lbl>
-                <div style={{fontSize:10,color:T.textMuted,marginTop:-4,marginBottom:8,textAlign:"center",letterSpacing:"0.02em"}}>Usaremos para lembrar de contatá-lo</div>
-                <CustomSelect value={snap.diaAporte} onChange={v=>setFSnap("diaAporte",v)} options={DIAS_MES} placeholder="Selecione o dia do mês"/>
-              </div>
-            </div>
-
-            {/* ═══ SEÇÃO 5: PATRIMÔNIO FINANCEIRO ═════════════════════ */}
-            <SectionTitle numero={5} total={10} icon="📈" subtitle="Quanto você já tem aplicado. Inclui reserva de emergência.">Patrimônio Financeiro</SectionTitle>
-
-            <div style={{display:"grid",gridTemplateColumns:"repeat(2, minmax(0, 1fr))",gap:12,marginBottom:16}}>
-              <div>
-                <Lbl>Patrimônio financeiro total (manual)</Lbl>
-                <InputMoeda key={`pat-${id}`} initValue={snap.patrimonio} onCommit={v=>setFSnap("patrimonio",v)}/>
-                <div style={{fontSize:10,color:T.textMuted,marginTop:6,...noEdit}}>Preenchido automaticamente quando cadastrar a carteira</div>
-              </div>
-              <div>
-                <Lbl>Liquidez diária disponível (D+0/D+1)</Lbl>
-                <InputMoeda key={`liq-${id}`} initValue={snap.liquidezDiaria} onCommit={v=>setFSnap("liquidezDiaria",v)}/>
-                {(()=>{
-                  const liq = parseCentavos(snap.liquidezDiaria)/100;
-                  const gasto = parseCentavos(snap.gastosMensaisManual)/100;
-                  if(liq>0&&gasto>0){
-                    const meses = liq/gasto;
-                    const reservaIdeal = gasto*6;
-                    const pct = Math.min(meses/6*100,100);
-                    const cor = meses>=6?"#22c55e":meses>=3?"#F0A202":"#ef4444";
-                    const label = meses>=6?`✓ Reserva completa. ${meses.toFixed(1)} meses de gastos cobertos.`:meses>=3?`${meses.toFixed(1)} meses cobertos. Faltam ${(reservaIdeal-liq).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})} para chegar em 6 meses.`:`⚠ Só ${meses.toFixed(1)} mês(es) cobertos. Risco alto.`;
-                    return (
-                      <div style={{marginTop:8}}>
-                        <div style={{height:3,background:"rgba(255,255,255,0.06)",borderRadius:2,overflow:"hidden",marginBottom:5}}>
-                          <div style={{height:"100%",width:`${pct}%`,background:cor,borderRadius:2,transition:"width 0.3s"}}/>
-                        </div>
-                        <div style={{fontSize:10,color:cor,letterSpacing:"0.01em"}}>{label}</div>
-                      </div>
-                    );
-                  }
-                  return null;
-                })()}
-              </div>
-            </div>
-
-            {/* ═══ SEÇÃO 6: PATRIMÔNIO IMOBILIÁRIO ═════════════════════ */}
-            <SectionTitle numero={6} total={10} icon="🏡" subtitle="Casa, apartamento, terreno, sítio ou imóvel comercial em seu nome.">Patrimônio Imobiliário</SectionTitle>
+            {/* ═══ SEÇÃO 4: PATRIMÔNIO IMOBILIÁRIO ═════════════════════ */}
+            <SectionTitle numero={4} total={8} icon="🏡" subtitle="Casa, apartamento, terreno, sítio ou imóvel comercial em seu nome.">Patrimônio Imobiliário</SectionTitle>
 
             {(snap.imoveis||[]).length===0&&(
               <div style={{fontSize:12,color:T.textMuted,marginBottom:10,padding:"10px 0",...noEdit}}>Nenhum imóvel cadastrado ainda.</div>
@@ -2909,7 +2856,7 @@ export default function ClienteFicha() {
             </button>
 
             {/* ═══ SEÇÃO 7: VEÍCULOS ═════════════════════════════════ */}
-            <SectionTitle numero={7} total={10} icon="🚗" subtitle="Carros, motos, caminhões, barcos. Toque no campo abaixo para escolher marca e modelo.">Veículos</SectionTitle>
+            <SectionTitle numero={5} total={8} icon="🚗" subtitle="Carros, motos, caminhões, barcos. Toque no campo abaixo para escolher marca e modelo.">Veículos</SectionTitle>
 
             {(snap.veiculos||[]).length===0&&(
               <div style={{fontSize:12,color:T.textMuted,marginBottom:10,padding:"10px 0",...noEdit}}>Nenhum veículo cadastrado ainda.</div>
@@ -2974,7 +2921,7 @@ export default function ClienteFicha() {
             </button>
 
             {/* ═══ SEÇÃO 7.5: PROTEÇÃO, SUCESSÃO E PREVIDÊNCIA ═══════════ */}
-            <SectionTitle numero={8} total={10} icon="🛡️" subtitle="Blindagem para imprevistos e plano para as próximas gerações.">Proteção, Sucessão e Previdência</SectionTitle>
+            <SectionTitle numero={6} total={8} icon="🛡️" subtitle="Blindagem para imprevistos e plano para as próximas gerações.">Proteção, Sucessão e Previdência</SectionTitle>
 
             <div style={{marginBottom:28,paddingBottom:8}}>
               <Lbl>Possui seguro de vida?</Lbl>
@@ -3058,7 +3005,7 @@ export default function ClienteFicha() {
             )}
 
             {/* ═══ SEÇÃO 8: MODELO DE ATENDIMENTO E CARTEIRA ════════════ */}
-            <SectionTitle numero={9} total={10} icon="🎯" subtitle="Como você é atendido hoje e seu estilo de investidor.">Atendimento e Perfil de Investidor</SectionTitle>
+            <SectionTitle numero={7} total={8} icon="🎯" subtitle="Como você é atendido hoje e seu estilo de investidor.">Atendimento e Perfil de Investidor</SectionTitle>
 
             <div style={{marginBottom:24}}>
               <Lbl>Modelo de atendimento atual</Lbl>
@@ -3084,7 +3031,7 @@ export default function ClienteFicha() {
             </div>
 
             {/* ═══ SEÇÃO 9: OBJETIVOS DE INTERESSE ════════════════════ */}
-            <SectionTitle numero={10} total={10} icon="🌟" subtitle="Selecione os objetivos que fazem sentido. Detalhamos cada um na próxima etapa.">Seus Objetivos</SectionTitle>
+            <SectionTitle numero={8} total={8} icon="🌟" subtitle="Selecione os objetivos que fazem sentido. Detalhamos cada um na próxima etapa.">Seus Objetivos</SectionTitle>
 
             <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(170px, 1fr))",gap:10,marginBottom:18}}>
               {OBJETIVOS_CADASTRO.map(obj=>{
