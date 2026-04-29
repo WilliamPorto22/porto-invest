@@ -8,6 +8,7 @@ import { getValidationError } from "../utils/validators";
 import { getErrorMessage, logError } from "../utils/errorHandler";
 import { Message } from "../components/Message";
 import { Logo } from "../components/Logo";
+import { whatsappUrl } from "../constants/contato";
 
 // Prefetch de rotas quentes em idle time — após a tela de login montar,
 // pré-carrega Dashboard e ClienteFicha no cache do browser em background
@@ -238,6 +239,32 @@ export default function Login() {
           <div className="login-footer">
             Acesso seguro · Dados protegidos
           </div>
+        </div>
+
+        {/* CTA de venda — leva o lead pro WhatsApp com mensagem pré-preenchida.
+            Centralizado em src/constants/contato.js (atualize o número real lá). */}
+        <div style={{
+          marginTop: 18,
+          textAlign: "center",
+          fontSize: 13,
+          color: "#9EB8D0",
+          letterSpacing: "0.01em",
+        }}>
+          Ainda não é cliente?{" "}
+          <a
+            href={whatsappUrl()}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              color: "#22c55e",
+              textDecoration: "none",
+              fontWeight: 600,
+              borderBottom: "1px dashed rgba(34,197,94,0.4)",
+              paddingBottom: 1,
+            }}
+          >
+            Fale com o William
+          </a>
         </div>
       </div>
     </div>
