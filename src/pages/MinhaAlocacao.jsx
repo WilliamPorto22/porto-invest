@@ -16,6 +16,12 @@ import {
   calcularAlocacao, calcularDesvio,
 } from "../constants/perfisInvestimento";
 import "../styles/donut-chart.css";
+// Reusa os estilos dos cards de perfil (cd-perfil-*, cd-donut-*) que
+// foram desenhados em /carteiras-desalinhadas. Sem este import, os 3
+// cards de perfis padrão renderizam sem estilo (texto sobreposto,
+// donuts soltos). As classes cd-leg-* do legenda foram adicionadas
+// em minha-alocacao.css.
+import "../styles/carteiras-desalinhadas.css";
 import "../styles/minha-alocacao.css";
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
