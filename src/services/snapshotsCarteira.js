@@ -470,6 +470,121 @@ export function mesclarMovimentacoes(movimentacoesAtuais, novasMov, mesRef) {
   return atual;
 }
 
+// ── Snapshot automático a partir da carteira atual ──────────────────
+// Gera (ou atualiza) o snapshot do MÊS CORRENTE usando o estado vivo da
+// carteira do cliente — sem depender de upload de PDF. Assim o gráfico
+// HistoricoMensalChart funciona desde o primeiro mês, mesmo pra cliente
+// que nunca importou extrato. Quando o PDF for importado depois, o
+// payload "rico" (tabelaRentMensal/ativos/movimentacoes) é preservado
+// pelo merge em salvarSnapshotMensal — esse auto-snapshot só preenche
+// patrimonioTotal, classes e o aporte do mês a partir de aportesHistorico.
+//
+// Idempotente: chamar várias vezes no mesmo mês apenas re-grava os mesmos
+// números (com merge:true). Não escreve se a carteira soma 0.
+//
+// Retorno: { mesRef, criou, escreveu } — `criou` true só na primeira vez.
+
+const CART_KEYS_AUTO = [
+  "posFixado", "ipca", "preFixado", "acoes", "fiis", "multi",
+  "prevVGBL", "prevPGBL", "globalEquities", "globalTreasury",
+  "globalFunds", "globalBonds", "global", "outros",
+];
+
+function totalAtivosClasse(carteira, key) {
+  const lista = carteira?.[key + "Ativos"];
+  if (Array.isArray(lista) && lista.length > 0) {
+    return lista.reduce((acc, at) => {
+      const v = Number(String(at?.valor || "0").replace(/\D/g, "")) / 100;
+      return acc + (Number.isFinite(v) ? v : 0);
+    }, 0);
+  }
+  // Fallback: agregado legado em centavos-string
+  const agg = carteira?.[key];
+  const v = Number(String(agg || "0").replace(/\D/g, "")) / 100;
+  return Number.isFinite(v) ? v : 0;
+}
+
+function aporteDoMes(aportesHistorico, mesRef) {
+  if (!Array.isArray(aportesHistorico)) return 0;
+  const [yyyy, mm] = mesRef.split("-").map((n) => parseInt(n));
+  let soma = 0;
+  for (const a of aportesHistorico) {
+    if (Number(a?.mes) === mm && Number(a?.ano) === yyyy) {
+      soma += Number(String(a?.valor || "0").replace(/\D/g, "")) / 100;
+    } else if (typeof a?.data === "string") {
+      // formato ISO ou pt-BR
+      const isoMatch = a.data.match(/^(\d{4})-(\d{2})/);
+      if (isoMatch && `${isoMatch[1]}-${isoMatch[2]}` === mesRef) {
+        soma += Number(String(a?.valor || "0").replace(/\D/g, "")) / 100;
+      }
+    }
+  }
+  return soma;
+}
+
+export async function garantirSnapshotMensalAuto(clienteId, cliente, opts = {}) {
+  if (!clienteId || !cliente) return { mesRef: null, criou: false, escreveu: false };
+  const mesRef = opts.mesRef || mesRefAtual();
+
+  const carteira = cliente.carteira || {};
+  const classes = {};
+  let total = 0;
+  for (const k of CART_KEYS_AUTO) {
+    const v = totalAtivosClasse(carteira, k);
+    if (v > 0) {
+      classes[k] = v;
+      total += v;
+    }
+  }
+  if (total <= 0) return { mesRef, criou: false, escreveu: false };
+
+  // Lê snapshot existente — se já veio de PDF (fonte != "auto"), não sobrescreve.
+  const ref = doc(db, "clientes", clienteId, "snapshotsCarteira", mesRef);
+  const existente = await getDoc(ref);
+  if (existente.exists() && existente.data()?.fonte && existente.data().fonte !== "auto") {
+    return { mesRef, criou: false, escreveu: false };
+  }
+
+  const aporte = aporteDoMes(cliente.aportesHistorico, mesRef);
+  const dadosAntigos = existente.exists() ? existente.data() : null;
+  const patrimonioAnterior = dadosAntigos?.patrimonioTotal || null;
+
+  // rentMes só faz sentido quando há mês anterior pra comparar.
+  // Para o auto-snapshot, deixamos nulo — o PDF preenche depois.
+  const payload = stripUndefined({
+    mesRef,
+    dataRef: new Date().toISOString().slice(0, 10),
+    patrimonioTotal: total,
+    rentMes: dadosAntigos?.rentMes ?? null,
+    rentAno: dadosAntigos?.rentAno ?? null,
+    rent12m: dadosAntigos?.rent12m ?? null,
+    classes,
+    ativos: dadosAntigos?.ativos || [],
+    resumoMes: aporte > 0
+      ? { ...(dadosAntigos?.resumoMes || {}), aportes: aporte }
+      : (dadosAntigos?.resumoMes || {}),
+    fonte: "auto",
+    atualizadoEm: new Date().toISOString(),
+    ...(existente.exists() ? {} : { criadoEm: new Date().toISOString() }),
+  });
+  // Suprime escrita se nada mudou (evita custo de write inútil em re-renders).
+  if (
+    dadosAntigos &&
+    Math.abs((dadosAntigos.patrimonioTotal || 0) - total) < 0.01 &&
+    Math.abs((dadosAntigos.resumoMes?.aportes || 0) - aporte) < 0.01
+  ) {
+    return { mesRef, criou: false, escreveu: false };
+  }
+  await setDoc(ref, payload, { merge: true });
+  return {
+    mesRef,
+    criou: !existente.exists(),
+    escreveu: true,
+    patrimonioAnterior,
+    patrimonioAtual: total,
+  };
+}
+
 // ── Sanity check: aportes obviamente errados (compra confundida com aporte,
 // total do patrimônio etc.). Mesma regra usada na Carteira.jsx ao decidir
 // o que vai pra aportesHistorico — agora também filtra antes de gravar

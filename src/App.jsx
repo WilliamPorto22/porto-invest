@@ -30,6 +30,7 @@ const CarteirasDesalinhadas  = lazy(() => import("./pages/CarteirasDesalinhadas"
 const MinhaAlocacao          = lazy(() => import("./pages/MinhaAlocacao"));
 const MeHome                 = lazy(() => import("./pages/MeHome"));
 const ClientePainel          = lazy(() => import("./pages/ClientePainel"));
+const MeResumo               = lazy(() => import("./pages/MeResumo"));
 
 const LoadingPage = () => (
   <div className="page-loading"><span>carregando…</span></div>
@@ -57,6 +58,7 @@ function App() {
               Fases 4–6 substituirão cada redirect por página dedicada. */}
           <Route path="/me"            element={<Guard element={<MeRedirect />} />} />
           <Route path="/me/home"       element={<Guard element={<MeHome />} />} />
+          <Route path="/me/resumo"     element={<Guard element={<MeResumo />} />} />
           <Route path="/me/objetivos"  element={<Guard element={<MeRedirect subpath="objetivos" />} />} />
           <Route path="/me/carteira"   element={<Guard element={<MeRedirect subpath="carteira" />} />} />
           <Route path="/me/fluxo"      element={<Guard element={<MeRedirect subpath="fluxo" />} />} />
@@ -70,6 +72,7 @@ function App() {
               /me/home + botão Voltar/Editar. Para edição da ficha, o
               assessor abre /cliente/:id?edit=1 (ClienteFicha em modo edit). */}
           <Route path="/cliente/:id/painel" element={<Guard roles={INTERNO} element={<ClientePainel />} />} />
+          <Route path="/cliente/:id/resumo" element={<Guard ownerOnly element={<MeResumo />} />} />
 
           <Route path="/cliente/:id" element={<Guard ownerOnly element={<ClienteFicha />} />} />
           <Route path="/cliente/:id/objetivos" element={<Guard ownerOnly element={<Objetivos />} />} />

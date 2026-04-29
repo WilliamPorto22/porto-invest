@@ -8,6 +8,7 @@ import { Sidebar } from "../components/Sidebar";
 import { Navbar } from "../components/Navbar";
 import PainelClienteShared from "../components/cliente/PainelClienteShared";
 import { perfilCompleto } from "../utils/perfilCompleto";
+import { garantirSnapshotMensalAuto } from "../services/snapshotsCarteira";
 
 /**
  * MeHome — Página inicial dedicada do cliente final.
@@ -55,6 +56,20 @@ export default function MeHome() {
     return () => unsub();
   }, [clienteId]);
 
+  // 3) Snapshot automático do mês corrente (uma vez por sessão/mês)
+  useEffect(() => {
+    if (!cliente || !clienteId) return;
+    const ano = new Date().getFullYear();
+    const mes = String(new Date().getMonth() + 1).padStart(2, "0");
+    const mesRef = `${ano}-${mes}`;
+    const guardKey = `porto_snap_auto_${clienteId}_${mesRef}`;
+    try { if (localStorage.getItem(guardKey) === "1") return; }
+    catch { /* localStorage indisponível */ }
+    garantirSnapshotMensalAuto(clienteId, cliente)
+      .then(() => { try { localStorage.setItem(guardKey, "1"); } catch { /* noop */ } })
+      .catch(() => { /* silencia falha de permissão/offline */ });
+  }, [cliente, clienteId]);
+
   if (authLoading) {
     return (
       <div className="protected-loading">
@@ -84,6 +99,11 @@ export default function MeHome() {
   try {
     localStorage.setItem(`porto_perfil_completo_${clienteId}`, status.completo ? "1" : "0");
   } catch { /* localStorage indisponível */ }
+
+  // Snapshot mensal automático — uma vez por sessão por cliente, com guard
+  // em localStorage pra não escrever a cada render. O guard usa o mesRef
+  // atual: ao virar o mês, dispara de novo. Falhas são silenciosas (sem
+  // permissão / offline) — o usuário ainda vê a Carteira normal.
 
   return (
     <div className="dashboard-container has-sidebar">

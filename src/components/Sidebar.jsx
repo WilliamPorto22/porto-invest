@@ -270,6 +270,7 @@ function buildMenuClienteFinal(id) {
   // Diagnóstico só aparece quando perfil está completo (gating).
   return [
     { id: "visao",      label: "Início",                  icon: "home",     path: `/me/home` },
+    { id: "resumo",     label: "Resumo patrimonial",      icon: "chart",    path: `/me/resumo` },
     { id: "objetivos",  label: "Meus sonhos",             icon: "goal",     path: `/me/objetivos` },
     { id: "carteira",   label: "Minha carteira",          icon: "wallet",   path: `/me/carteira` },
     { id: "fluxo",      label: "Receitas e gastos",       icon: "dollar",   path: `/me/fluxo` },
@@ -295,6 +296,7 @@ function buildMenuCliente(id) {
   // ao final, que cliente final não tem.
   return [
     { id: "visao",      label: "Início",                  icon: "home",      path: `/cliente/${id}/painel` },
+    { id: "resumo",     label: "Resumo patrimonial",      icon: "chart",     path: `/cliente/${id}/resumo` },
     { id: "objetivos",  label: "Meus sonhos",             icon: "goal",      path: `/cliente/${id}/objetivos` },
     { id: "carteira",   label: "Minha carteira",          icon: "wallet",    path: `/cliente/${id}/carteira` },
     { id: "fluxo",      label: "Receitas e gastos",       icon: "dollar",    path: `/cliente/${id}/fluxo` },

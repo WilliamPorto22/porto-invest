@@ -113,6 +113,13 @@
   align-items: center;
   gap: 12px;
 }
+/* DonutChartModern injeta labels internas (R$, %, Total). Como estamos
+   sobrepondo o nosso .cd-donut-centro-custom com hover dinâmico, as
+   labels nativas precisam sumir — senão fica "R$ 1.2M" duplicado e
+   sobreposto, exatamente o que aparecia na tela do cliente. */
+.ma-donut-col .pi-donut-label,
+.ma-donut-col .pi-donut-valor,
+.ma-donut-col .pi-donut-pct { display: none !important; }
 .ma-donut-title {
   font-size: 13px;
   font-weight: 600;
@@ -187,10 +194,13 @@
 }
 
 /* ─── Ajustes Prioritários ──────────────────────────────────────── */
+/* Cards em grid: 4 lado a lado em telas largas, 2 em médias, 1 no mobile.
+   Antes era flex-column → cada card pegava 100% da largura, ficava
+   esticado e fazia a página rolar muito. */
 .ma-prioridades-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
   margin-top: 16px;
 }
 .ma-prioridade-item {
@@ -407,14 +417,19 @@
   border: 1px solid rgba(255, 255, 255, 0.07);
   border-left: 3px solid;
   border-radius: 12px;
-  padding: 16px 18px;
-  margin-bottom: 12px;
+  padding: 14px 16px;
+  margin-bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
 }
 .ma-prio-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  gap: 8px;
+  margin-bottom: 0;
 }
 .ma-prio-titulo-grupo { display: flex; align-items: center; gap: 10px; }
 .ma-prio-titulo {
@@ -423,14 +438,14 @@
   color: var(--text-primary);
 }
 .ma-prio-comparativo {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr 1fr;
   align-items: center;
-  gap: 14px;
-  padding: 10px 14px;
+  gap: 8px 10px;
+  padding: 10px 12px;
   background: rgba(0,0,0,0.2);
   border-radius: 8px;
-  margin-bottom: 12px;
-  flex-wrap: wrap;
+  margin-bottom: 0;
 }
 .ma-prio-num { display: flex; flex-direction: column; gap: 2px; }
 .ma-prio-num-label {
@@ -440,22 +455,23 @@
   letter-spacing: 0.06em;
 }
 .ma-prio-num-val {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
 }
-.ma-prio-num-rs { margin-left: auto; }
-.ma-prio-num-rs .ma-prio-num-val { font-size: 14px; }
+.ma-prio-num-rs { margin-left: 0; text-align: right; }
+.ma-prio-num-rs .ma-prio-num-val { font-size: 13px; }
 .ma-prio-arrow {
   color: var(--text-secondary);
   font-size: 14px;
   opacity: 0.5;
 }
 .ma-prio-acao {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-primary);
   line-height: 1.5;
-  margin: 0 0 12px;
+  margin: 0;
 }
 .ma-prio-acao strong { color: #F0A202; }
 .ma-prio-objetivos {

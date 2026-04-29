@@ -8,6 +8,7 @@ import { Sidebar } from "../components/Sidebar";
 import { Navbar } from "../components/Navbar";
 import PainelClienteShared from "../components/cliente/PainelClienteShared";
 import { perfilCompleto } from "../utils/perfilCompleto";
+import { garantirSnapshotMensalAuto } from "../services/snapshotsCarteira";
 
 /**
  * ClientePainel — Painel premium do cliente, visto pelo assessor/master.
@@ -57,6 +58,21 @@ export default function ClientePainel() {
     );
     return () => unsub();
   }, [clienteId]);
+
+  // Snapshot automático do mês corrente — mesma lógica do MeHome para que o
+  // gráfico Histórico Mensal funcione mesmo quando o assessor abre o cliente
+  // antes do cliente entrar pela primeira vez.
+  useEffect(() => {
+    if (!cliente || !clienteId) return;
+    const ano = new Date().getFullYear();
+    const mes = String(new Date().getMonth() + 1).padStart(2, "0");
+    const guardKey = `porto_snap_auto_${clienteId}_${ano}-${mes}`;
+    try { if (localStorage.getItem(guardKey) === "1") return; }
+    catch { /* localStorage indisponível */ }
+    garantirSnapshotMensalAuto(clienteId, cliente)
+      .then(() => { try { localStorage.setItem(guardKey, "1"); } catch { /* noop */ } })
+      .catch(() => { /* silencia */ });
+  }, [cliente, clienteId]);
 
   if (authLoading) {
     return (
