@@ -4,25 +4,20 @@ import { useAuth } from "../hooks/useAuth";
 import { lerClienteComFallback } from "../services/lerClienteFallback";
 import { onSnapshot, doc } from "firebase/firestore";
 import { db } from "../firebase";
-import HomeLiberdade from "../components/cliente/HomeLiberdade";
 import { Sidebar } from "../components/Sidebar";
 import { Navbar } from "../components/Navbar";
+import PainelClienteShared from "../components/cliente/PainelClienteShared";
 import { perfilCompleto } from "../utils/perfilCompleto";
-import ChecklistOnboardingCliente from "../components/cliente/ChecklistOnboardingCliente";
-import PatrimonioConsolidadoCliente from "../components/cliente/PatrimonioConsolidadoCliente";
 
 /**
- * MeHome — Página inicial dedicada do cliente.
+ * MeHome — Página inicial dedicada do cliente final.
  *
- * Carrega o doc /clientes/{profile.clienteId} e renderiza HomeLiberdade
- * isolada, sem o peso do ClienteFicha. Bundle do cliente fica enxuto.
+ * Carrega o doc /clientes/{profile.clienteId} e renderiza o painel
+ * compartilhado (HomeLiberdade + Patrimônio Consolidado + checklist).
  *
- * Estratégia de dados:
- *   - Hidrata instantaneamente do cache (lerClienteComFallback)
- *   - Mantém em sync via onSnapshot (atualiza ao vivo)
- *
- * Assessor/Master que cair aqui é redirecionado pelo MeRedirect; mas
- * por garantia, esta página também checa role.
+ * Para o assessor visualizando o painel do cliente, ver `ClientePainel`
+ * (mesmo conteúdo, layout externo levemente diferente: botão "Voltar
+ * aos clientes" no topo).
  */
 export default function MeHome() {
   const { profile, role, loading: authLoading } = useAuth();
@@ -55,7 +50,7 @@ export default function MeHome() {
       (snap) => {
         if (snap.exists()) setCliente({ id: snap.id, ...snap.data() });
       },
-      () => { /* silencia erros de permissão temporários durante refresh */ }
+      () => { /* silencia erros de permissão durante refresh */ }
     );
     return () => unsub();
   }, [clienteId]);
@@ -84,33 +79,21 @@ export default function MeHome() {
     );
   }
 
-  // Gating do Diagnóstico: enquanto perfil incompleto, esconde do menu.
-  // Persiste em localStorage para o Sidebar (que não tem o doc do cliente)
-  // ler sem precisar de outro fetch.
+  // Gating do Diagnóstico — persiste status p/ Sidebar (que não tem o doc).
   const status = perfilCompleto(cliente);
   try {
     localStorage.setItem(`porto_perfil_completo_${clienteId}`, status.completo ? "1" : "0");
-  } catch { /* localStorage indisponível, segue */ }
+  } catch { /* localStorage indisponível */ }
 
   return (
     <div className="dashboard-container has-sidebar">
       <Sidebar mode="cliente" clienteId={clienteId} />
       <Navbar />
-      {/* Container padronizado — mesma largura/padding usados em
-          Carteira, Diagnóstico e ClienteFicha (cliente-zoom + maxWidth 1280)
-          para que toda navegação do cliente tenha bordas consistentes. */}
       <div
         className="dashboard-content with-sidebar cliente-zoom"
         style={{ maxWidth: 1280, margin: "0 auto", padding: "28px 28px 60px" }}
       >
-        {!status.completo && (
-          <ChecklistOnboardingCliente
-            status={status}
-            primeiroNome={(cliente?.nome || "").split(" ")[0] || ""}
-          />
-        )}
-        <HomeLiberdade cliente={cliente} clienteId={clienteId} />
-        <PatrimonioConsolidadoCliente cliente={cliente} />
+        <PainelClienteShared cliente={cliente} clienteId={clienteId} />
       </div>
     </div>
   );

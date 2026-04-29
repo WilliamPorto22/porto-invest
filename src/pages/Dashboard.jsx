@@ -786,7 +786,7 @@ export default function Dashboard(){
           clientesHit.push({
             label:c.nome||"(sem nome)",
             sublabel:[c.codigo,c.cidade&&c.uf?`${c.cidade}/${c.uf}`:c.uf||c.cidade].filter(Boolean).join(" · "),
-            onClick:()=>nav(`/cliente/${c.id}`),
+            onClick:()=>nav(`/cliente/${c.id}/painel`),
           });
         }
       }

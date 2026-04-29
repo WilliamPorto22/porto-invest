@@ -29,6 +29,7 @@ const Mercado                = lazy(() => import("./pages/Mercado"));
 const CarteirasDesalinhadas  = lazy(() => import("./pages/CarteirasDesalinhadas"));
 const MinhaAlocacao          = lazy(() => import("./pages/MinhaAlocacao"));
 const MeHome                 = lazy(() => import("./pages/MeHome"));
+const ClientePainel          = lazy(() => import("./pages/ClientePainel"));
 
 const LoadingPage = () => (
   <div className="page-loading"><span>carregando…</span></div>
@@ -64,6 +65,12 @@ function App() {
           <Route path="/me/simulador"  element={<Guard element={<MeRedirect subpath="simulador" />} />} />
 
           <Route path="/dashboard" element={<Guard roles={INTERNO} element={<Dashboard />} />} />
+
+          {/* Painel premium do cliente visto pelo assessor — mesma visão da
+              /me/home + botão Voltar/Editar. Para edição da ficha, o
+              assessor abre /cliente/:id?edit=1 (ClienteFicha em modo edit). */}
+          <Route path="/cliente/:id/painel" element={<Guard roles={INTERNO} element={<ClientePainel />} />} />
+
           <Route path="/cliente/:id" element={<Guard ownerOnly element={<ClienteFicha />} />} />
           <Route path="/cliente/:id/objetivos" element={<Guard ownerOnly element={<Objetivos />} />} />
           <Route path="/objetivo/:clienteId/:objetivoIndex" element={<Guard ownerOnly element={<ObjetivoDetalhes />} />} />

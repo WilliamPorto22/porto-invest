@@ -284,95 +284,20 @@ function buildMenuClienteFinal(id) {
  *  ClienteFicha consome para abrir o accordion certo e rolar até ele.
  */
 function buildMenuCliente(id) {
+  // Menu do ASSESSOR/MASTER visualizando o painel de um cliente.
+  // Padronizado com o menu do cliente final (`buildMenuClienteFinal`)
+  // para que ambos enxerguem a mesma jornada — diferença só no
+  // "Voltar aos clientes" e "Editar Perfil" (acessam a ficha de cadastro).
   return [
-    {
-      id: "visao",
-      label: "Visão Geral",
-      icon: "home",
-      path: `/cliente/${id}`,
-    },
-    {
-      id: "patrimonio",
-      label: "Patrimônio Consolidado",
-      icon: "chart",
-      path: `/cliente/${id}#patrimonio`,
-    },
-    {
-      id: "carteira",
-      label: "Carteira",
-      icon: "wallet",
-      path: `/cliente/${id}/carteira`,
-      children: [
-        { label: "Carteira completa", path: `/cliente/${id}/carteira` },
-        { label: "Resumo da carteira (home)", path: `/cliente/${id}#carteira-home` },
-      ],
-    },
-    {
-      id: "extrato",
-      label: "Extrato",
-      icon: "extrato",
-      path: `/cliente/${id}/extrato`,
-      children: [
-        { label: "Este mês", path: `/cliente/${id}/extrato` },
-        { label: "Histórico completo", path: `/cliente/${id}/extrato?view=historico` },
-        { label: "Dividendos recebidos", path: `/cliente/${id}/extrato?tipo=dividendo` },
-        { label: "Aportes", path: `/cliente/${id}/extrato?tipo=aporte` },
-        { label: "Retiradas", path: `/cliente/${id}/extrato?tipo=retirada` },
-      ],
-    },
-    {
-      id: "rendas",
-      label: "Rendas e Despesas",
-      icon: "dollar",
-      path: `/cliente/${id}#rendas`,
-      children: [
-        { label: "Resumo (home)", path: `/cliente/${id}#rendas` },
-        { label: "Detalhamento mensal", path: `/cliente/${id}/fluxo` },
-        { label: "Mapa de aportes", path: `/cliente/${id}#aportes` },
-      ],
-    },
-    {
-      id: "dados",
-      label: "Dados Cadastrais",
-      icon: "users",
-      path: `/cliente/${id}#dados`,
-    },
-    {
-      id: "reserva",
-      label: "Reserva de Emergência",
-      icon: "alert",
-      path: `/cliente/${id}#reserva`,
-    },
-    {
-      id: "editar",
-      label: "Editar Perfil",
-      icon: "simulate",
-      path: `/cliente/${id}?edit=1`,
-    },
-    {
-      id: "objetivos",
-      label: "Objetivos",
-      icon: "goal",
-      path: `/cliente/${id}/objetivos`,
-    },
-    {
-      id: "diag",
-      label: "Diagnóstico",
-      icon: "compass",
-      path: `/cliente/${id}/diagnostico`,
-    },
-    {
-      id: "simul",
-      label: "Simulador",
-      icon: "simulate",
-      path: `/cliente/${id}/simulador`,
-    },
-    {
-      id: "voltar",
-      label: "Voltar aos clientes",
-      icon: "arrowLeft",
-      path: "/dashboard",
-    },
+    { id: "visao",     label: "Início",            icon: "home",     path: `/cliente/${id}/painel` },
+    { id: "objetivos", label: "Meus sonhos",       icon: "goal",     path: `/cliente/${id}/objetivos` },
+    { id: "carteira",  label: "Minha carteira",    icon: "wallet",   path: `/cliente/${id}/carteira` },
+    { id: "fluxo",     label: "Receitas e gastos", icon: "dollar",   path: `/cliente/${id}/fluxo` },
+    { id: "extrato",   label: "Extrato",           icon: "extrato",  path: `/cliente/${id}/extrato` },
+    { id: "diag",      label: "Diagnóstico",       icon: "compass",  path: `/cliente/${id}/diagnostico` },
+    { id: "simul",     label: "Simulador",         icon: "simulate", path: `/cliente/${id}/simulador` },
+    { id: "editar",    label: "Editar perfil",     icon: "users",    path: `/cliente/${id}?edit=1` },
+    { id: "voltar",    label: "Voltar aos clientes", icon: "arrowLeft", path: "/dashboard" },
   ];
 }
 
@@ -596,7 +521,7 @@ export function Sidebar({ mode = "admin", clienteId = null, clienteNome = null }
   const sidebarContent = (
     <div className="sidebar-inner">
       {/* Topo — logo Porto Invest */}
-      <div className="sidebar-logo" onClick={() => { go(mode === "cliente" ? (isCliente ? "/me/home" : `/cliente/${clienteId}`) : "/dashboard"); }}>
+      <div className="sidebar-logo" onClick={() => { go(mode === "cliente" ? (isCliente ? "/me/home" : `/cliente/${clienteId}/painel`) : "/dashboard"); }}>
         <img
           src="/assets/logo/logo-icon.svg"
           alt=""
