@@ -28,15 +28,31 @@ RBAC with three roles defined in [src/constants/roles.js](src/constants/roles.js
 
 **Bootstrap edge case**: if the Firestore doc does not exist yet but the Firebase Auth email matches `MASTER_EMAIL`, the user is treated as master *only* to unlock `/dev/seed` — the single chicken-and-egg escape hatch. Once the master doc is written, role always comes from Firestore. See [docs/PLANO_AUTH_MULTI_NIVEL.md](docs/PLANO_AUTH_MULTI_NIVEL.md) for the full hierarchy plan.
 
-[src/components/ProtectedRoute.jsx](src/components/ProtectedRoute.jsx) currently only checks `user != null`, not role.
+[src/components/ProtectedRoute.jsx](src/components/ProtectedRoute.jsx) supports three guards: `roles=[…]` (allowlist), `ownerOnly` (cliente só vê o próprio `:id` da URL), and the default authenticated check. Quando o guard bloqueia, a função interna `rotaInicialPorPapel(role, profile)` redireciona para a porta certa: `/dashboard` para master/assessor, `/me/home` para cliente.
 
 ### Routing
-All routes live in [src/App.jsx](src/App.jsx). `Login` and `Dashboard` are eager; every other page is `lazy()` to keep the initial bundle small. Navigation conventions the Dashboard and Sidebar rely on:
+All routes live in [src/App.jsx](src/App.jsx). `Login` and `Dashboard` are eager; every other page is `lazy()` to keep the initial bundle small.
+
+**Cliente final usa o namespace `/me/*`** — porta de entrada introduzida em 28/04/2026 para que o cliente nunca digite `id` na URL e seu bundle fique enxuto:
+
+- `/me`, `/me/home` → [MeHome.jsx](src/pages/MeHome.jsx) carrega o doc `/clientes/{profile.clienteId}` e renderiza `<HomeLiberdade>` isolada (sem o peso do `ClienteFicha` de 3.9k linhas).
+- `/me/objetivos`, `/me/carteira`, `/me/fluxo`, `/me/extrato`, `/me/simulador` → [MeRedirect.jsx](src/components/MeRedirect.jsx) resolve dinamicamente para `/cliente/{profile.clienteId}/...`. Fases futuras substituirão cada redirect por uma página dedicada mantendo a URL `/me/*`.
+- `/me/diagnostico` → mesmo redirect, mas com **gating**: só passa quando `localStorage["porto_perfil_completo_{clienteId}"] === "1"` (escrito por `MeHome` via [perfilCompleto](src/utils/perfilCompleto.js)). Se incompleto, manda pra `/me/home?perfilIncompleto=1`.
+
+Login redireciona o cliente diretamente para `/me/home`; dashboard e ficha completa continuam em `/cliente/:id/*` para assessor e master.
+
+Navigation conventions the Dashboard and Sidebar rely on:
 
 - `/dashboard?filtro=<id>` — activates a KPI filter and scrolls to the clients section (`#clientes`). Valid ids: `todos`, `semAporte`, `semRevisao`, `inviavel`, `followUp`, `emReuniao`, `objetivosDesalinhados`, `feeBased`.
 - `/dashboard#clientes` — same scroll-to-clients behavior (hash and query-param paths both react, via `useLocation()` + `useSearchParams()` effects in Dashboard).
 - `/dashboard#cadastro` — scrolls to the cadastro banner.
-- Placeholder routes (`/vencimentos`, `/mercado`, `/carteiras-desalinhadas`) render `EmDesenvolvimento` until those pages exist.
+- Placeholder routes (`/vencimentos`, `/carteiras-desalinhadas`) render `EmDesenvolvimento` until those pages exist.
+
+### Onboarding e gating do Diagnóstico
+[src/utils/perfilCompleto.js](src/utils/perfilCompleto.js) encapsula a regra de "perfil pronto": ≥1 objetivo, ≥1 receita, ≥1 despesa, ≥1 ativo na carteira, dados pessoais (nome+email). `MeHome` calcula esse status a cada render, persiste em `localStorage["porto_perfil_completo_{clienteId}"]` e renderiza [ChecklistOnboardingCliente](src/components/cliente/ChecklistOnboardingCliente.jsx) no topo enquanto incompleto. O Sidebar (em modo cliente final) lê esse mesmo localStorage e oculta o item "Diagnóstico" até completar. **Não duplique a regra** — sempre use `perfilCompleto(cliente)`.
+
+### Cadastro do cliente — campos removidos da UI
+Em 28/04/2026, os blocos "Renda, Gastos e Aportes" (seção 4) e "Patrimônio Financeiro" (seção 5) foram removidos do formulário de cadastro em [ClienteFicha.jsx](src/pages/ClienteFicha.jsx). A ficha hoje tem 8 seções (era 10). Os campos `salarioMensal`, `gastosMensaisManual`, `aporteMedio`, `metaAporteMensal`, `diaAporte`, `patrimonio`, `liquidezDiaria` **continuam existindo no Firestore** e são lidos por Diagnóstico/Dashboard/HomeLiberdade — apenas a edição via formulário do cadastro foi removida. Esses números agora vêm naturalmente: renda/gastos/aporte do `FluxoMensal` (lançamentos reais), patrimônio financeiro da `Carteira` (soma dos `Ativos`).
 
 ### Data model (`clientes` collection)
 Each cliente document holds both profile fields and an embedded `carteira` object. For every class key in [src/utils/ativos.js](src/utils/ativos.js) `CLASSES_CARTEIRA` (`posFixado`, `ipca`, `preFixado`, `acoes`, `fiis`, `multi`, `prevVGBL`, `prevPGBL`, `globalEquities`, `globalTreasury`, `globalFunds`, `globalBonds`, `global`, `outros`), the carteira may contain:

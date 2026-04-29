@@ -476,7 +476,7 @@ export default function Dashboard(){
         }
       }
     } catch { /* ignora */ }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   },[user?.uid, isMaster]);
 
   // Procura o UID do assessor "William" (role=assessor) na lista carregada.

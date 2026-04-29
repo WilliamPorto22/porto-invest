@@ -60,7 +60,8 @@
       "Bash(git -c user.email=williamporto0@gmail.com -c user.name=\"William Porto\" commit -m \"fase 3: remover blocos Renda/Gastos/Aportes e Patrimonio Financeiro do cadastro \\(total 10 -> 8 secoes\\)\")",
       "Bash(git -c user.email=williamporto0@gmail.com -c user.name=\"William Porto\" commit -m \"fase 4: pagina /me/home dedicada com HomeLiberdade isolada + menu cliente apontando para /me/*\")",
       "Bash(git -c user.email=williamporto0@gmail.com -c user.name=\"William Porto\" commit -m \"fase 5: gating do Diagnostico ate perfil completo + checklist no topo da MeHome\")",
-      "Bash(git -c user.email=williamporto0@gmail.com -c user.name=\"William Porto\" commit -m \"fase 6: CTA WhatsApp no Login + central de contato\")"
+      "Bash(git -c user.email=williamporto0@gmail.com -c user.name=\"William Porto\" commit -m \"fase 6: CTA WhatsApp no Login + central de contato\")",
+      "Bash(git -c user.email=williamporto0@gmail.com -c user.name=\"William Porto\" commit -m \"fase 8: atualizar CLAUDE.md com nova arquitetura \\(rotas /me/*, perfilCompleto, cadastro 8 secoes\\) + auto-fix lint\")"
     ]
   }
 }

@@ -71,7 +71,7 @@ export function useAuth() {
     if (!temCache) {
       failsafe = setTimeout(() => {
         if (alive) {
-          // eslint-disable-next-line no-console
+           
           console.warn("[useAuth] failsafe 1.99s — liberando profileReady");
           setProfileReady(true);
         }
