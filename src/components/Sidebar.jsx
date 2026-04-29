@@ -263,16 +263,19 @@ const MENU_ADMIN = [
  *  na própria Visão Geral, então não duplicamos elas no menu.
  */
 function buildMenuClienteFinal(id) {
+  // Menu enxuto do cliente final — 5 itens principais.
+  // Diagnóstico só aparece quando perfil está completo (gating na Fase 5).
+  // Itens secundários ("Mercado", "Editar perfil", "Trocar senha") ficam ao final.
   return [
-    { id: "visao",     label: "Início",            icon: "home",     path: `/cliente/${id}` },
-    { id: "carteira",  label: "Carteira",          icon: "wallet",   path: `/cliente/${id}/carteira` },
-    { id: "objetivos", label: "Objetivos",         icon: "goal",     path: `/cliente/${id}/objetivos` },
-    { id: "fluxo",     label: "Fluxo",             icon: "dollar",   path: `/cliente/${id}/fluxo` },
-    { id: "diag",      label: "Diagnóstico",       icon: "compass",  path: `/cliente/${id}/diagnostico` },
-    { id: "alocacao",  label: "Minha Alocação",    icon: "wallet",   path: "/minha-alocacao" },
-    { id: "mercado",   label: "Resumo de Mercado", icon: "trending", path: "/mercado" },
-    { id: "editar",    label: "Editar Perfil",     icon: "simulate", path: `/cliente/${id}?edit=1` },
-    { id: "senha",     label: "Trocar Senha",      icon: "lock",     path: "/reset-password" },
+    { id: "visao",     label: "Início",            icon: "home",     path: `/me/home` },
+    { id: "objetivos", label: "Meus sonhos",       icon: "goal",     path: `/me/objetivos` },
+    { id: "carteira",  label: "Minha carteira",    icon: "wallet",   path: `/me/carteira` },
+    { id: "fluxo",     label: "Receitas e gastos", icon: "dollar",   path: `/me/fluxo` },
+    { id: "extrato",   label: "Extrato",           icon: "extrato",  path: `/me/extrato` },
+    { id: "diag",      label: "Diagnóstico",       icon: "compass",  path: `/me/diagnostico` },
+    { id: "mercado",   label: "Resumo de mercado", icon: "trending", path: "/mercado" },
+    { id: "editar",    label: "Editar perfil",     icon: "simulate", path: `/cliente/${id}?edit=1` },
+    { id: "senha",     label: "Trocar senha",      icon: "lock",     path: "/reset-password" },
   ];
 }
 
@@ -585,7 +588,7 @@ export function Sidebar({ mode = "admin", clienteId = null, clienteNome = null }
   const sidebarContent = (
     <div className="sidebar-inner">
       {/* Topo — logo Porto Invest */}
-      <div className="sidebar-logo" onClick={() => { go(mode === "cliente" ? `/cliente/${clienteId}` : "/dashboard"); }}>
+      <div className="sidebar-logo" onClick={() => { go(mode === "cliente" ? (isCliente ? "/me/home" : `/cliente/${clienteId}`) : "/dashboard"); }}>
         <img
           src="/assets/logo/logo-icon.svg"
           alt=""

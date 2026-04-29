@@ -28,6 +28,7 @@ const ResetPassword     = lazy(() => import("./pages/ResetPassword"));
 const Mercado                = lazy(() => import("./pages/Mercado"));
 const CarteirasDesalinhadas  = lazy(() => import("./pages/CarteirasDesalinhadas"));
 const MinhaAlocacao          = lazy(() => import("./pages/MinhaAlocacao"));
+const MeHome                 = lazy(() => import("./pages/MeHome"));
 
 const LoadingPage = () => (
   <div className="page-loading"><span>carregando…</span></div>
@@ -54,7 +55,7 @@ function App() {
               Cada rota resolve para /cliente/{profile.clienteId}/...
               Fases 4–6 substituirão cada redirect por página dedicada. */}
           <Route path="/me"            element={<Guard element={<MeRedirect />} />} />
-          <Route path="/me/home"       element={<Guard element={<MeRedirect />} />} />
+          <Route path="/me/home"       element={<Guard element={<MeHome />} />} />
           <Route path="/me/objetivos"  element={<Guard element={<MeRedirect subpath="objetivos" />} />} />
           <Route path="/me/carteira"   element={<Guard element={<MeRedirect subpath="carteira" />} />} />
           <Route path="/me/fluxo"      element={<Guard element={<MeRedirect subpath="fluxo" />} />} />

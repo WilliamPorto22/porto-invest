@@ -1,0 +1,95 @@
+import { useEffect, useState } from "react";
+import { Navigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
+import { lerClienteComFallback } from "../services/lerClienteFallback";
+import { onSnapshot, doc } from "firebase/firestore";
+import { db } from "../firebase";
+import HomeLiberdade from "../components/cliente/HomeLiberdade";
+import { Sidebar } from "../components/Sidebar";
+import { Navbar } from "../components/Navbar";
+
+/**
+ * MeHome — Página inicial dedicada do cliente.
+ *
+ * Carrega o doc /clientes/{profile.clienteId} e renderiza HomeLiberdade
+ * isolada, sem o peso do ClienteFicha. Bundle do cliente fica enxuto.
+ *
+ * Estratégia de dados:
+ *   - Hidrata instantaneamente do cache (lerClienteComFallback)
+ *   - Mantém em sync via onSnapshot (atualiza ao vivo)
+ *
+ * Assessor/Master que cair aqui é redirecionado pelo MeRedirect; mas
+ * por garantia, esta página também checa role.
+ */
+export default function MeHome() {
+  const { profile, role, loading: authLoading } = useAuth();
+  const [cliente, setCliente] = useState(null);
+  const [carregandoCliente, setCarregandoCliente] = useState(true);
+
+  const clienteId = profile?.clienteId;
+
+  // 1) Hidratação rápida via cache + fallback
+  useEffect(() => {
+    if (!clienteId) return;
+    let alive = true;
+    lerClienteComFallback(clienteId, { isAlive: () => alive })
+      .then((data) => {
+        if (!alive) return;
+        if (data?.exists !== false) setCliente(data?.data || data);
+        setCarregandoCliente(false);
+      })
+      .catch(() => {
+        if (alive) setCarregandoCliente(false);
+      });
+    return () => { alive = false; };
+  }, [clienteId]);
+
+  // 2) Sync ao vivo
+  useEffect(() => {
+    if (!clienteId) return;
+    const unsub = onSnapshot(
+      doc(db, "clientes", clienteId),
+      (snap) => {
+        if (snap.exists()) setCliente({ id: snap.id, ...snap.data() });
+      },
+      () => { /* silencia erros de permissão temporários durante refresh */ }
+    );
+    return () => unsub();
+  }, [clienteId]);
+
+  if (authLoading) {
+    return (
+      <div className="protected-loading">
+        <div className="protected-loading-text">Carregando sua área...</div>
+      </div>
+    );
+  }
+
+  if (role && role !== "cliente") {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  if (!clienteId) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (carregandoCliente && !cliente) {
+    return (
+      <div className="protected-loading">
+        <div className="protected-loading-text">Preparando sua jornada...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="dashboard-container has-sidebar">
+      <Sidebar mode="cliente" clienteId={clienteId} />
+      <Navbar />
+      <div className="dashboard-content with-sidebar">
+        <div style={{ maxWidth: 1180, margin: "0 auto", padding: "20px 16px 48px" }}>
+          <HomeLiberdade cliente={cliente} clienteId={clienteId} />
+        </div>
+      </div>
+    </div>
+  );
+}
