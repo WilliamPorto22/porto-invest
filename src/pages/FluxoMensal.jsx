@@ -506,7 +506,7 @@ export default function FluxoMensal() {
 
       <div
         className="dashboard-content with-sidebar cliente-zoom pi-fluxo-page"
-        style={{ maxWidth: 1100, margin: "0 auto", padding: "24px 22px 80px" }}
+        style={{ maxWidth: 1280, margin: "0 auto", padding: "28px 28px 60px" }}
       >
         {/* Header */}
         <div style={{ marginBottom: 18, ...noEdit }}>

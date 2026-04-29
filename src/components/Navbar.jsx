@@ -5,6 +5,11 @@ import { Logo } from "./Logo";
 import { useAuth } from "../hooks/useAuth";
 import "../styles/navbar.css";
 
+// "Trocar senha" foi movido para a sidebar (mesmo item para cliente e
+// assessor, abaixo de Editar perfil). Logout fica na navbar — visível
+// para cliente final também (antes só aparecia se a página passasse
+// showLogout, agora cliente sempre vê o botão de sair).
+
 /**
  * Navbar padronizada para todas as páginas
  * - Logo
@@ -27,8 +32,8 @@ export function Navbar({
   userBadge = null, // chip opcional (ex.: "Admin · William · R$ 1.2M") exibido ao lado das ações
   notificationsBell = null, // componente do sino de notificações (canto direito)
 }) {
-  const navigate = useNavigate();
   const location = useLocation();
+  const navigate = useNavigate();
   const { isCliente } = useAuth();
   const [suggestOpen, setSuggestOpen] = useState(false);
   const searchBoxRef = useRef(null);
@@ -194,23 +199,9 @@ export function Navbar({
         ))}
 
         {notificationsBell}
-        {showLogout && !isCliente && (
-          <button
-            className="navbar-action-btn"
-            onClick={() => navigate("/reset-password")}
-            title="Trocar minha senha"
-          >
-            <span className="navbar-btn-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="4" y="11" width="16" height="9" rx="2" />
-                <path d="M8 11V8a4 4 0 0 1 8 0v3" />
-                <circle cx="12" cy="15.5" r="1" />
-              </svg>
-            </span>
-            <span className="navbar-btn-label">Trocar senha</span>
-          </button>
-        )}
-        {showLogout && <LogoutButton />}
+        {/* Logout sempre visível para o cliente final; assessor mantém o
+            controle via prop showLogout das páginas internas. */}
+        {(showLogout || isCliente) && <LogoutButton />}
       </div>
     </nav>
   );

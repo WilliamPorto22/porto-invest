@@ -2207,7 +2207,7 @@ export default function ClienteFicha() {
       <div
         className={id !== "novo" ? "cliente-zoom cliente-wrap" : ""}
         style={{
-          maxWidth: id !== "novo" ? 1260 : 860,
+          maxWidth: id !== "novo" ? 1280 : 860,
           margin:"0 auto",
           padding:isMobile?"16px 12px calc(80px + env(safe-area-inset-bottom, 0px))":"24px 28px 80px",
           boxSizing:"border-box",

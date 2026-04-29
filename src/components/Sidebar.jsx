@@ -263,19 +263,23 @@ const MENU_ADMIN = [
  *  na própria Visão Geral, então não duplicamos elas no menu.
  */
 function buildMenuClienteFinal(id) {
-  // Menu enxuto do cliente final — 5 itens principais.
-  // Diagnóstico só aparece quando perfil está completo (gating na Fase 5).
-  // Itens secundários ("Mercado", "Editar perfil", "Trocar senha") ficam ao final.
+  // Menu do cliente final — 8 itens da jornada + Trocar senha.
+  // Atualização de mercado e Comparação de carteira ficam logo acima
+  // de Diagnóstico (mesma escada de leitura: ver mercado → comparar com
+  // a minha → diagnosticar → simular → editar perfil → trocar senha).
+  // Diagnóstico só aparece quando perfil está completo (gating).
   return [
-    { id: "visao",     label: "Início",            icon: "home",     path: `/me/home` },
-    { id: "objetivos", label: "Meus sonhos",       icon: "goal",     path: `/me/objetivos` },
-    { id: "carteira",  label: "Minha carteira",    icon: "wallet",   path: `/me/carteira` },
-    { id: "fluxo",     label: "Receitas e gastos", icon: "dollar",   path: `/me/fluxo` },
-    { id: "extrato",   label: "Extrato",           icon: "extrato",  path: `/me/extrato` },
-    { id: "diag",      label: "Diagnóstico",       icon: "compass",  path: `/me/diagnostico` },
-    { id: "mercado",   label: "Resumo de mercado", icon: "trending", path: "/mercado" },
-    { id: "editar",    label: "Editar perfil",     icon: "simulate", path: `/cliente/${id}?edit=1` },
-    { id: "senha",     label: "Trocar senha",      icon: "lock",     path: "/reset-password" },
+    { id: "visao",      label: "Início",                  icon: "home",     path: `/me/home` },
+    { id: "objetivos",  label: "Meus sonhos",             icon: "goal",     path: `/me/objetivos` },
+    { id: "carteira",   label: "Minha carteira",          icon: "wallet",   path: `/me/carteira` },
+    { id: "fluxo",      label: "Receitas e gastos",       icon: "dollar",   path: `/me/fluxo` },
+    { id: "extrato",    label: "Extrato",                 icon: "extrato",  path: `/me/extrato` },
+    { id: "mercado",    label: "Atualização de mercado",  icon: "trending", path: "/mercado" },
+    { id: "comparacao", label: "Comparação de carteira",  icon: "chart",    path: "/minha-alocacao" },
+    { id: "diag",       label: "Diagnóstico da sua vida", icon: "compass",  path: `/me/diagnostico` },
+    { id: "simul",      label: "Simulador",               icon: "simulate", path: `/me/simulador` },
+    { id: "editar",     label: "Editar perfil",           icon: "users",    path: `/cliente/${id}?edit=1` },
+    { id: "senha",      label: "Trocar senha",            icon: "lock",     path: "/reset-password" },
   ];
 }
 
@@ -286,18 +290,22 @@ function buildMenuClienteFinal(id) {
 function buildMenuCliente(id) {
   // Menu do ASSESSOR/MASTER visualizando o painel de um cliente.
   // Padronizado com o menu do cliente final (`buildMenuClienteFinal`)
-  // para que ambos enxerguem a mesma jornada — diferença só no
-  // "Voltar aos clientes" e "Editar Perfil" (acessam a ficha de cadastro).
+  // — mesma escada de leitura — diferença só no "Trocar senha" (segue
+  // pra /reset-password do próprio assessor) e no "Voltar aos clientes"
+  // ao final, que cliente final não tem.
   return [
-    { id: "visao",     label: "Início",            icon: "home",     path: `/cliente/${id}/painel` },
-    { id: "objetivos", label: "Meus sonhos",       icon: "goal",     path: `/cliente/${id}/objetivos` },
-    { id: "carteira",  label: "Minha carteira",    icon: "wallet",   path: `/cliente/${id}/carteira` },
-    { id: "fluxo",     label: "Receitas e gastos", icon: "dollar",   path: `/cliente/${id}/fluxo` },
-    { id: "extrato",   label: "Extrato",           icon: "extrato",  path: `/cliente/${id}/extrato` },
-    { id: "diag",      label: "Diagnóstico",       icon: "compass",  path: `/cliente/${id}/diagnostico` },
-    { id: "simul",     label: "Simulador",         icon: "simulate", path: `/cliente/${id}/simulador` },
-    { id: "editar",    label: "Editar perfil",     icon: "users",    path: `/cliente/${id}?edit=1` },
-    { id: "voltar",    label: "Voltar aos clientes", icon: "arrowLeft", path: "/dashboard" },
+    { id: "visao",      label: "Início",                  icon: "home",      path: `/cliente/${id}/painel` },
+    { id: "objetivos",  label: "Meus sonhos",             icon: "goal",      path: `/cliente/${id}/objetivos` },
+    { id: "carteira",   label: "Minha carteira",          icon: "wallet",    path: `/cliente/${id}/carteira` },
+    { id: "fluxo",      label: "Receitas e gastos",       icon: "dollar",    path: `/cliente/${id}/fluxo` },
+    { id: "extrato",    label: "Extrato",                 icon: "extrato",   path: `/cliente/${id}/extrato` },
+    { id: "mercado",    label: "Atualização de mercado",  icon: "trending",  path: "/mercado" },
+    { id: "comparacao", label: "Comparação de carteira",  icon: "chart",     path: `/cliente/${id}/ajustes` },
+    { id: "diag",       label: "Diagnóstico da sua vida", icon: "compass",   path: `/cliente/${id}/diagnostico` },
+    { id: "simul",      label: "Simulador",               icon: "simulate",  path: `/cliente/${id}/simulador` },
+    { id: "editar",     label: "Editar perfil",           icon: "users",     path: `/cliente/${id}?edit=1` },
+    { id: "senha",      label: "Trocar senha",            icon: "lock",      path: "/reset-password" },
+    { id: "voltar",     label: "Voltar aos clientes",     icon: "arrowLeft", path: "/dashboard" },
   ];
 }
 

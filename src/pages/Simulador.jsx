@@ -391,8 +391,8 @@ export default function Simulador() {
         ]}
       />
 
-      <div className="dashboard-content with-sidebar">
-      <div className="simulador-container" style={{ ...C.containerWide, maxWidth: 1400, padding: "24px 40px 56px" }}>
+      <div className="dashboard-content with-sidebar cliente-zoom" style={{ maxWidth: 1280, margin: "0 auto", padding: "28px 28px 60px" }}>
+      <div className="simulador-container" style={{ ...C.containerWide, maxWidth: "100%", padding: 0 }}>
         {/* Header */}
         <div style={{ marginBottom: 16 }}>
           <div style={{ fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", color: T.textMuted, marginBottom: 6 }}>

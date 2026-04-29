@@ -262,6 +262,7 @@ export default function Carteira() {
   // drill-down e editor
   const [classeAberta, setClasseAberta] = useState(null); // classKey
   const [ativoEditando, setAtivoEditando] = useState(null); // { classKey, idx } | "new-{classKey}"
+  const [classePicker, setClassePicker] = useState(false); // abre seletor de classe → AtivoEditor
   const [hoverFatia, setHoverFatia] = useState(null);
 
   // aporte rápido
@@ -724,16 +725,47 @@ export default function Carteira() {
   }
 
   // ─── Aporte ─────────────────────────────────────────────────
-  async function registrarAporte({ valor, data, observacao }) {
+  // Aceita o fluxo simples (só valor/data/obs → entra só no histórico) e
+  // o fluxo rico (com classe/ativo/segmento/objetivo → também cria um
+  // ativo dentro da carteira, como se o cliente tivesse aportado naquela
+  // posição). O campo `aportesHistorico` é a fonte do gráfico de aportes;
+  // o array `[classe]Ativos` é o que o Patrimônio Consolidado lê.
+  async function registrarAporte({ valor, data, observacao, classe, ativo, segmento, objetivo, vencimento }) {
     const centavos = parseCentavos(valor);
     if (centavos <= 0) return;
-    const novo = { id: newId(), valor: String(centavos), data: data || new Date().toISOString().slice(0, 10), observacao: observacao || "" };
-    const lista = [novo, ...(snap.aportesHistorico || [])];
-    const novoForm = { ...formRef.current, aportesHistorico: lista };
-    formRef.current = novoForm;
-    setSnap(novoForm);
-    await salvarSilencioso(novoForm);
-    setMsg("✓ Aporte registrado e refletido no dashboard.");
+    const dataFinal = data || new Date().toISOString().slice(0, 10);
+
+    const novoLog = {
+      id: newId(),
+      valor: String(centavos),
+      data: dataFinal,
+      observacao: observacao || "",
+      classe: classe || "",
+      ativo: ativo || "",
+    };
+    const novaListaLog = [novoLog, ...(snap.aportesHistorico || [])];
+    const base = { ...formRef.current, aportesHistorico: novaListaLog };
+
+    // Fluxo rico: também cria um ativo dentro da carteira.
+    if (classe && (ativo || objetivo)) {
+      const lista = [...(base[classe + "Ativos"] || [])];
+      lista.push({
+        id: newId(),
+        nome: ativo || "Aporte sem nome",
+        valor: String(centavos),
+        objetivo: objetivo || "",
+        vencimento: vencimento || "",
+        rentMes: "",
+        rentAno: "",
+        segmento: segmento || "",
+      });
+      base[classe + "Ativos"] = lista;
+    }
+
+    formRef.current = base;
+    setSnap(base);
+    await salvarSilencioso(base);
+    setMsg(classe ? "✓ Aporte registrado e ativo adicionado à carteira." : "✓ Aporte registrado e refletido no dashboard.");
     setTimeout(() => setMsg(""), 3500);
     setAporteModal(false);
   }
@@ -1255,6 +1287,7 @@ export default function Carteira() {
         actionButtons={[
           { icon: "←", label: "Voltar", variant: "secondary", onClick: () => (window.history.length > 1 ? navigate(-1) : navigate(`/cliente/${id}`)), title: "Voltar" },
           { icon: "↑", label: "Importar", onClick: () => fileInputRef.current?.click(), disabled: !!uploadProgress && !uploadProgress.error && uploadProgress.pct < 100 },
+          { icon: "＋", label: "Ativo", variant: "secondary", onClick: () => setClassePicker(true), title: "Adicionar ativo manualmente" },
           { icon: "＋", label: "Aporte", variant: "secondary", onClick: () => setAporteModal(true) },
           isEditing
             ? { icon: "💾", label: salvando ? "Salvando..." : "Salvar", variant: "primary", onClick: salvar, disabled: salvando }
@@ -1278,6 +1311,17 @@ export default function Carteira() {
       {xpSummary && <RelatorioModal meta={xpSummary} onClose={() => setXpSummary(null)} />}
       {uploadProgress && !importPend && <UploadOverlay progress={uploadProgress} onClose={() => setUploadProgress(null)} />}
       {aporteModal && <AporteModal onClose={() => setAporteModal(false)} onSave={registrarAporte} />}
+      {classePicker && (
+        <ClassePickerModal
+          onClose={() => setClassePicker(false)}
+          onPick={(classKey) => {
+            setClassePicker(false);
+            const idx = (getAtivos(classKey) || []).length;
+            upsertAtivo(classKey);
+            setAtivoEditando({ classKey, idx });
+          }}
+        />
+      )}
       {snapshotAberto && (
         <SnapshotViewerModal
           snapshot={snapshotAberto}
@@ -2840,9 +2884,21 @@ function LimparCarteiraModal({ nomeCliente, total, input, setInput, limpando, on
 }
 
 function AporteModal({ onClose, onSave }) {
+  // Aporte completo: pergunta destino (classe), nome do ativo, segmento/indexador,
+  // objetivo e valor — para refletir tanto no histórico quanto na carteira.
+  // O bloco "Detalhar destino" é opcional: se o cliente quiser só registrar o
+  // aporte como entrada de caixa, basta deixar o destino em branco.
   const [valor, setValor] = useState("");
   const [data, setData] = useState(new Date().toISOString().slice(0, 10));
   const [observacao, setObservacao] = useState("");
+  const [classe, setClasse] = useState("");
+  const [ativo, setAtivo] = useState("");
+  const [segmento, setSegmento] = useState("");
+  const [objetivo, setObjetivo] = useState("");
+  const [vencimento, setVencimento] = useState("");
+
+  const classesOpts = CLASSES.filter((c) => !c.legado);
+  const segOpts = classe === "acoes" ? SEGMENTOS.acoes : classe === "fiis" ? SEGMENTOS.fiis : null;
 
   return (
     <div style={{
@@ -2854,13 +2910,14 @@ function AporteModal({ onClose, onSave }) {
         onClick={(e) => e.stopPropagation()}
         style={{
           background: T.bgCard, border: `0.5px solid rgba(168,85,247,0.3)`,
-          borderRadius: T.radiusLg, padding: 24, width: 440, maxWidth: "95vw",
+          borderRadius: T.radiusLg, padding: 24, width: 560, maxWidth: "96vw",
+          maxHeight: "92vh", overflowY: "auto",
           boxShadow: T.shadowLg,
         }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
           <div>
             <div style={{ fontSize: 10, color: "#a855f7", textTransform: "uppercase", letterSpacing: "0.14em", marginBottom: 4 }}>+ Aporte</div>
-            <div style={{ fontSize: 17, fontWeight: 400, color: T.textPrimary }}>Registrar aporte mensal</div>
+            <div style={{ fontSize: 17, fontWeight: 400, color: T.textPrimary }}>Registrar aporte com destino</div>
           </div>
           <button onClick={onClose} style={{
             background: "rgba(255,255,255,0.04)", border: `0.5px solid ${T.border}`,
@@ -2870,14 +2927,99 @@ function AporteModal({ onClose, onSave }) {
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <div>
-            <div style={{ ...C.label }}>Valor do aporte</div>
-            <InputMoeda initValue={valor} onCommit={setValor} size="lg" />
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
+            <div>
+              <div style={{ ...C.label }}>Valor do aporte</div>
+              <InputMoeda initValue={valor} onCommit={setValor} size="lg" />
+            </div>
+            <div>
+              <div style={{ ...C.label }}>Data</div>
+              <InputDate initValue={data} onCommit={setData} />
+            </div>
           </div>
-          <div>
-            <div style={{ ...C.label }}>Data</div>
-            <InputDate initValue={data} onCommit={setData} />
+
+          <div style={{
+            padding: "12px 14px",
+            background: "rgba(168,85,247,0.05)",
+            border: "0.5px solid rgba(168,85,247,0.18)",
+            borderRadius: T.radiusMd,
+            display: "flex", flexDirection: "column", gap: 12,
+          }}>
+            <div style={{ fontSize: 10, color: "#c084fc", textTransform: "uppercase", letterSpacing: "0.14em", ...noSel }}>
+              Destino do aporte (opcional, mas recomendado)
+            </div>
+
+            <div>
+              <div style={{ ...C.label }}>Classe</div>
+              <select
+                value={classe}
+                onChange={(e) => { setClasse(e.target.value); setSegmento(""); }}
+                style={{
+                  width: "100%", padding: "10px 12px",
+                  background: "rgba(255,255,255,0.04)",
+                  border: `0.5px solid ${T.border}`,
+                  borderRadius: T.radiusSm,
+                  color: T.textPrimary, fontSize: 13, fontFamily: T.fontFamily,
+                }}
+              >
+                <option value="">— Selecione a classe —</option>
+                {classesOpts.map((c) => <option key={c.key} value={c.key}>{c.label}</option>)}
+              </select>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
+              <div>
+                <div style={{ ...C.label }}>Nome do ativo</div>
+                <InputTexto initValue={ativo} onCommit={setAtivo} placeholder="Ex: CDB Itaú IPCA+ 2030" />
+              </div>
+              <div>
+                <div style={{ ...C.label }}>{segOpts ? "Segmento" : "Indexador / Segmento"}</div>
+                {segOpts ? (
+                  <select
+                    value={segmento}
+                    onChange={(e) => setSegmento(e.target.value)}
+                    style={{
+                      width: "100%", padding: "10px 12px",
+                      background: "rgba(255,255,255,0.04)",
+                      border: `0.5px solid ${T.border}`,
+                      borderRadius: T.radiusSm,
+                      color: T.textPrimary, fontSize: 13, fontFamily: T.fontFamily,
+                    }}
+                  >
+                    <option value="">—</option>
+                    {segOpts.map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                ) : (
+                  <InputTexto initValue={segmento} onCommit={setSegmento} placeholder="Ex: IPCA+, CDI, prefixado" />
+                )}
+              </div>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
+              <div>
+                <div style={{ ...C.label }}>Objetivo</div>
+                <select
+                  value={objetivo}
+                  onChange={(e) => setObjetivo(e.target.value)}
+                  style={{
+                    width: "100%", padding: "10px 12px",
+                    background: "rgba(255,255,255,0.04)",
+                    border: `0.5px solid ${T.border}`,
+                    borderRadius: T.radiusSm,
+                    color: T.textPrimary, fontSize: 13, fontFamily: T.fontFamily,
+                  }}
+                >
+                  <option value="">—</option>
+                  {OBJETIVOS.map((o) => <option key={o} value={o}>{o}</option>)}
+                </select>
+              </div>
+              <div>
+                <div style={{ ...C.label }}>Vencimento (opcional)</div>
+                <InputDate initValue={vencimento} onCommit={setVencimento} />
+              </div>
+            </div>
           </div>
+
           <div>
             <div style={{ ...C.label }}>Observação (opcional)</div>
             <InputTexto initValue={observacao} onCommit={setObservacao} placeholder="Ex: salário, 13º, venda de imóvel..." />
@@ -2888,7 +3030,7 @@ function AporteModal({ onClose, onSave }) {
             border: "0.5px solid rgba(168,85,247,0.2)", borderRadius: T.radiusSm,
             fontSize: 10, color: "#c084fc", lineHeight: 1.6, ...noSel,
           }}>
-            💡 O aporte será registrado no histórico e automaticamente refletido no dashboard do cliente.
+            💡 Se você preencher o destino, o ativo é criado automaticamente na carteira além de ficar registrado no histórico.
           </div>
 
           <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
@@ -2898,7 +3040,7 @@ function AporteModal({ onClose, onSave }) {
               color: T.textSecondary, fontSize: 11, cursor: "pointer",
               fontFamily: T.fontFamily, letterSpacing: "0.12em", textTransform: "uppercase",
             }}>Cancelar</button>
-            <button onClick={() => onSave({ valor, data, observacao })} style={{
+            <button onClick={() => onSave({ valor, data, observacao, classe, ativo, segmento, objetivo, vencimento })} style={{
               flex: 1.5, padding: 12,
               background: "rgba(168,85,247,0.15)",
               border: "0.5px solid rgba(168,85,247,0.4)",
@@ -2908,6 +3050,65 @@ function AporteModal({ onClose, onSave }) {
               fontWeight: 500,
             }}>Registrar aporte</button>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Picker simples — clicar em "+ Ativo" abre esse modal com todas as classes,
+// o usuário escolhe e o AtivoEditor abre em modo "novo" para aquela classe.
+function ClassePickerModal({ onClose, onPick }) {
+  return (
+    <div style={{
+      position: "fixed", inset: 0, background: "rgba(0,0,0,0.78)", zIndex: 720,
+      display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
+      backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
+    }} onClick={onClose}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: T.bgCard, border: `0.5px solid ${T.border}`,
+          borderRadius: T.radiusLg, padding: 24, width: 520, maxWidth: "96vw",
+          maxHeight: "88vh", overflowY: "auto",
+          boxShadow: T.shadowLg,
+        }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18 }}>
+          <div>
+            <div style={{ fontSize: 10, color: T.gold, textTransform: "uppercase", letterSpacing: "0.16em", marginBottom: 4, ...noSel }}>+ Adicionar ativo manual</div>
+            <div style={{ fontSize: 17, fontWeight: 400, color: T.textPrimary }}>Em qual classe entra esse ativo?</div>
+          </div>
+          <button onClick={onClose} style={{
+            background: "rgba(255,255,255,0.04)", border: `0.5px solid ${T.border}`,
+            borderRadius: "50%", width: 30, height: 30, color: T.textSecondary,
+            cursor: "pointer", fontSize: 14,
+          }}>×</button>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 10 }}>
+          {CLASSES.filter((c) => !c.legado).map((c) => (
+            <button
+              key={c.key}
+              onClick={() => onPick(c.key)}
+              style={{
+                padding: "16px 14px",
+                background: "rgba(255,255,255,0.03)",
+                border: `0.5px solid ${T.border}`,
+                borderLeft: `3px solid ${c.cor}`,
+                borderRadius: T.radiusMd,
+                color: T.textPrimary,
+                fontSize: 12, fontWeight: 500, letterSpacing: "0.02em",
+                cursor: "pointer",
+                textAlign: "left",
+                fontFamily: T.fontFamily,
+                transition: "background 0.15s ease",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.03)")}
+            >
+              {c.label}
+            </button>
+          ))}
         </div>
       </div>
     </div>

@@ -411,7 +411,7 @@ export default function MinhaAlocacao() {
       <div className="dashboard-container has-sidebar">
         <Sidebar mode="cliente" clienteId={profile?.clienteId} />
         <Navbar showLogout={true} />
-        <div className="dashboard-content with-sidebar">
+        <div className="dashboard-content with-sidebar cliente-zoom" style={{ maxWidth: 1280, margin: "0 auto", padding: "28px 28px 60px" }}>
           <div className="ma-loading">Carregando sua estratégia de alocação…</div>
         </div>
       </div>
@@ -423,7 +423,7 @@ export default function MinhaAlocacao() {
       <div className="dashboard-container has-sidebar">
         <Sidebar />
         <Navbar showLogout={true} />
-        <div className="dashboard-content with-sidebar">
+        <div className="dashboard-content with-sidebar cliente-zoom" style={{ maxWidth: 1280, margin: "0 auto", padding: "28px 28px 60px" }}>
           <div className="ma-empty">Esta página é destinada ao cliente final. Acesse pelo painel do assessor para visualizar a carteira de um cliente.</div>
         </div>
       </div>
@@ -445,7 +445,7 @@ export default function MinhaAlocacao() {
     <div className="dashboard-container has-sidebar">
       <Sidebar mode="cliente" clienteId={profile?.clienteId} clienteNome={cliente?.nome} />
       <Navbar showLogout={true} />
-      <div className="dashboard-content with-sidebar">
+      <div className="dashboard-content with-sidebar cliente-zoom" style={{ maxWidth: 1280, margin: "0 auto", padding: "28px 28px 60px" }}>
 
         {/* ── Header ──────────────────────────────────────────────── */}
         <div className="ma-header">

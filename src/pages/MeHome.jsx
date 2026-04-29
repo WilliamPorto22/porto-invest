@@ -87,8 +87,8 @@ export default function MeHome() {
 
   return (
     <div className="dashboard-container has-sidebar">
-      <Sidebar mode="cliente" clienteId={clienteId} />
-      <Navbar />
+      <Sidebar mode="cliente" clienteId={clienteId} clienteNome={cliente?.nome} />
+      <Navbar showLogout={true} />
       <div
         className="dashboard-content with-sidebar cliente-zoom"
         style={{ maxWidth: 1280, margin: "0 auto", padding: "28px 28px 60px" }}

@@ -475,7 +475,7 @@ export default function Extrato() {
       <div className="dashboard-container has-sidebar">
         <Sidebar mode="cliente" clienteId={id} clienteNome="" />
         <Navbar showLogout={true} />
-        <div className="dashboard-content with-sidebar">
+        <div className="dashboard-content with-sidebar cliente-zoom" style={{ maxWidth: 1280, margin: "0 auto", padding: "28px 28px 60px" }}>
           <div style={{ padding: 40, color: "#94A7BF", textAlign: "center" }}>
             Carregando extrato…
           </div>
@@ -513,7 +513,7 @@ export default function Extrato() {
         ]}
       />
 
-      <div className="dashboard-content with-sidebar">
+      <div className="dashboard-content with-sidebar cliente-zoom" style={{ maxWidth: 1280, margin: "0 auto", padding: "28px 28px 60px" }}>
         <div className="extrato-page">
 
           {/* HERO */}

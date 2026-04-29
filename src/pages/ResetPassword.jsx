@@ -9,6 +9,8 @@ import {
 import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "../firebase";
 import { useAuth } from "../hooks/useAuth";
+import { Sidebar } from "../components/Sidebar";
+import { Navbar } from "../components/Navbar";
 
 /**
  * Página de redefinição de senha.
@@ -23,7 +25,7 @@ import { useAuth } from "../hooks/useAuth";
  * via "Esqueci minha senha" na tela de login.
  */
 export default function ResetPassword() {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, isCliente } = useAuth();
   const nav = useNavigate();
   const [senhaAtual, setSenhaAtual] = useState("");
   const [novaSenha, setNovaSenha] = useState("");
@@ -121,9 +123,41 @@ export default function ResetPassword() {
     );
   }
 
+  // Em "primeiro acesso" (mustResetPassword=true) NÃO mostramos a sidebar:
+  // o usuário precisa trocar a senha antes de poder navegar para qualquer
+  // outro lugar. No modo voluntário (botão "Trocar senha" no menu) mantemos
+  // o layout padrão pra ele continuar vendo o resto da plataforma.
+  if (obrigatorio) {
+    return (
+      <div className="reset-wrap">
+        <form onSubmit={handleSubmit} className="reset-card">
+          {renderFormBody()}
+        </form>
+      </div>
+    );
+  }
+
   return (
-    <div className="reset-wrap">
-      <form onSubmit={handleSubmit} className="reset-card">
+    <div className="dashboard-container has-sidebar">
+      <Sidebar
+        mode={isCliente ? "cliente" : "admin"}
+        clienteId={isCliente ? profile?.clienteId : null}
+        clienteNome={isCliente ? profile?.nome : null}
+      />
+      <Navbar showLogout={true} />
+      <div className="dashboard-content with-sidebar cliente-zoom" style={{ maxWidth: 1280, margin: "0 auto", padding: "28px 28px 60px" }}>
+        <div className="reset-wrap" style={{ minHeight: "auto", paddingTop: 20 }}>
+          <form onSubmit={handleSubmit} className="reset-card">
+            {renderFormBody()}
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+
+  function renderFormBody() {
+    return (
+      <>
         <span className="reset-eyebrow">{eyebrowText}</span>
         <h1 className="reset-title">{obrigatorio ? "Defina uma nova senha" : "Trocar senha"}</h1>
         <p className="reset-sub">
@@ -203,7 +237,7 @@ export default function ResetPassword() {
         >
           Sair e voltar pra tela de login
         </button>
-      </form>
-    </div>
-  );
+      </>
+    );
+  }
 }
