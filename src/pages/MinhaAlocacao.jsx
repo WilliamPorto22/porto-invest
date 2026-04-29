@@ -143,17 +143,21 @@ function PerfilCard({ perfil, ativo }) {
 }
 
 // ─── Componente principal ─────────────────────────────────────────────────────
-export default function MinhaAlocacao() {
+// Pode ser renderizado em 2 contextos:
+//  - cliente final em /minha-alocacao → lê profile.clienteId.
+//  - assessor em /cliente/:id/ajustes → recebe clienteIdOverride via prop e
+//    mostrarVoltar=true para exibir o botão "Voltar ao painel" na navbar.
+export default function MinhaAlocacao({ clienteIdOverride = null, mostrarVoltar = false } = {}) {
   const { profile, isCliente } = useAuth();
+  const clienteId = clienteIdOverride || profile?.clienteId;
 
   const [cliente, setCliente]   = useState(null);
   const [snapshot, setSnapshot] = useState(null);
   const [assessor, setAssessor] = useState(null);
   const [loading, setLoading]   = useState(true);
 
-  // Carrega dados do cliente logado + snapshot de mercado + assessor vinculado
+  // Carrega dados do cliente (logado ou override) + snapshot + assessor vinculado
   useEffect(() => {
-    const clienteId = profile?.clienteId;
     if (!clienteId) { setLoading(false); return; }
 
     let vivo = true;
@@ -181,7 +185,7 @@ export default function MinhaAlocacao() {
     }).catch(() => { if (vivo) setLoading(false); });
 
     return () => { vivo = false; };
-  }, [profile?.clienteId]);
+  }, [clienteId]);
 
   // Resolve link do WhatsApp dinamicamente baseado no assessor cadastrado
   function whatsAppLink(mensagem) {
@@ -406,11 +410,18 @@ export default function MinhaAlocacao() {
 
   const quoteAtual = useMemo(() => quoteDaSemana(), []);
 
+  // Botão "Voltar ao painel" — só aparece quando assessor está visualizando
+  // o cliente (renderizado via /cliente/:id/ajustes), nunca pro cliente final.
+  const navbarActions = mostrarVoltar && clienteId
+    ? [{ icon: "←", label: "Voltar ao painel", variant: "secondary",
+         onClick: () => { window.location.href = `/cliente/${clienteId}/painel`; } }]
+    : [];
+
   if (loading) {
     return (
       <div className="dashboard-container has-sidebar">
-        <Sidebar mode="cliente" clienteId={profile?.clienteId} />
-        <Navbar showLogout={true} />
+        <Sidebar mode="cliente" clienteId={clienteId} />
+        <Navbar showLogout={true} actionButtons={navbarActions} />
         <div className="dashboard-content with-sidebar cliente-zoom" style={{ maxWidth: 1280, margin: "0 auto", padding: "28px 28px 60px" }}>
           <div className="ma-loading">Carregando sua estratégia de alocação…</div>
         </div>
@@ -418,7 +429,9 @@ export default function MinhaAlocacao() {
     );
   }
 
-  if (!isCliente && !profile?.clienteId) {
+  // Sem clienteId resolvido (nem profile nem override) → tela vazia.
+  // Acontece quando assessor abre /minha-alocacao direto sem cliente vinculado.
+  if (!clienteId) {
     return (
       <div className="dashboard-container has-sidebar">
         <Sidebar />
@@ -443,13 +456,13 @@ export default function MinhaAlocacao() {
 
   return (
     <div className="dashboard-container has-sidebar">
-      <Sidebar mode="cliente" clienteId={profile?.clienteId} clienteNome={cliente?.nome} />
-      <Navbar showLogout={true} />
+      <Sidebar mode="cliente" clienteId={clienteId} clienteNome={cliente?.nome} />
+      <Navbar showLogout={true} actionButtons={navbarActions} />
       <div className="dashboard-content with-sidebar cliente-zoom" style={{ maxWidth: 1280, margin: "0 auto", padding: "28px 28px 60px" }}>
 
         {/* ── Header ──────────────────────────────────────────────── */}
         <div className="ma-header">
-          <h1 className="ma-title">Estratégia de Alocação</h1>
+          <h1 className="ma-title">{mostrarVoltar ? `Comparação de Carteira · ${cliente?.nome || ""}` : "Estratégia de Alocação"}</h1>
           <p className="ma-subtitle">
             Entenda como sua carteira está organizada e o caminho para o alinhamento perfeito com seus objetivos.
           </p>
