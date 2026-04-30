@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { brl, brlCompact } from "../../utils/currency";
+import { patrimonioFinanceiro } from "../../utils/bensCliente";
 
 /**
  * EvolucaoPatrimonialMensal — Cards horizontais mês a mês no estilo Itaú.
@@ -69,6 +70,15 @@ export default function EvolucaoPatrimonialMensal({ snapshots, cliente, clienteI
 
   const dados = useMemo(() => {
     const lista = Array.isArray(snapshots) ? [...snapshots] : [];
+
+    // Fallback: sem snapshots, mas com carteira viva > 0 → sintetiza um ponto
+    // do mês corrente para a fita aparecer ao invés de mostrar "vazio".
+    const patVivo = cliente ? patrimonioFinanceiro(cliente) : 0;
+    if (lista.length === 0 && patVivo > 0) {
+      const hoje = new Date();
+      const mesRef = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}`;
+      lista.push({ mesRef, patrimonioTotal: patVivo, _sintetico: true });
+    }
     if (lista.length === 0) return { vazio: true };
 
     const ordenados = lista

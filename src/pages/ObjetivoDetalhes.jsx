@@ -2348,17 +2348,14 @@ export default function ObjetivoDetalhes() {
         ]}
       />
 
-      <div className="dashboard-content with-sidebar pi-page-cliente">
-        <div style={{ padding: "16px 28px 40px", maxWidth: 920, margin: "0 auto" }}>
+      <div className="dashboard-content with-sidebar cliente-zoom pi-page-cliente" style={{ maxWidth: 1280, margin: "0 auto", padding: "28px 28px 60px" }}>
+        <Cabecalho />
+        <Abas />
 
-          <Cabecalho />
-          <Abas />
-
-          {abaAtiva === "resumo" && <Resumo />}
-          {abaAtiva === "simulador" && <Planos />}
-          {abaAtiva === "acompanhamento" && <Acompanhamento />}
-          {abaAtiva === "ativos" && <Ativos />}
-        </div>
+        {abaAtiva === "resumo" && <Resumo />}
+        {abaAtiva === "simulador" && <Planos />}
+        {abaAtiva === "acompanhamento" && <Acompanhamento />}
+        {abaAtiva === "ativos" && <Ativos />}
       </div>
       {ModalVincularAtivos()}
 

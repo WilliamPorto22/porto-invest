@@ -368,20 +368,38 @@ export default function Dashboard(){
           settled.forEach((s) => results.push(s.status === "fulfilled" ? s.value : []));
           if (!alive) return;
         }
-        // Agrega por mesRef
+        // Agrega por mesRef. Para cada cliente: se tem snapshots, soma valores
+        // por mês. Se NÃO tem snapshots mas tem carteira viva > 0, sintetiza
+        // um ponto no mês corrente a partir do patFin do cliente — assim o
+        // gráfico nunca fica vazio só porque os PDFs ainda não foram importados.
+        const hoje = new Date();
+        const mesCorrente = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}`;
         const agregadoPorMes = new Map();
-        results.forEach((snaps) => {
-          (snaps || []).forEach((s) => {
-            const valor = Number(s.patrimonioTotal) || 0;
-            if (!s.mesRef || valor <= 0) return;
-            const cur = agregadoPorMes.get(s.mesRef) || { mesRef: s.mesRef, valor: 0, clientes: 0 };
-            cur.valor += valor;
-            cur.clientes += 1;
-            agregadoPorMes.set(s.mesRef, cur);
-          });
+        results.forEach((snaps, idx) => {
+          const cliente = clientes[idx];
+          const lista = Array.isArray(snaps) ? snaps.filter((s) => s?.mesRef && Number(s.patrimonioTotal) > 0) : [];
+          if (lista.length > 0) {
+            lista.forEach((s) => {
+              const valor = Number(s.patrimonioTotal) || 0;
+              const cur = agregadoPorMes.get(s.mesRef) || { mesRef: s.mesRef, valor: 0, clientes: 0 };
+              cur.valor += valor;
+              cur.clientes += 1;
+              agregadoPorMes.set(s.mesRef, cur);
+            });
+          } else {
+            // Fallback: cliente sem snapshots — usa patrimônio financeiro vivo
+            // como ponto do mês corrente (visualização imediata, sem escrita).
+            const patFinVivo = getPatFin(cliente);
+            if (patFinVivo > 0) {
+              const cur = agregadoPorMes.get(mesCorrente) || { mesRef: mesCorrente, valor: 0, clientes: 0 };
+              cur.valor += patFinVivo;
+              cur.clientes += 1;
+              agregadoPorMes.set(mesCorrente, cur);
+            }
+          }
         });
         // Mantém só meses com pelo menos 1 cliente
-        const lista = Array.from(agregadoPorMes.values()).sort((a, b) => String(b.mesRef).localeCompare(String(a.mesRef)));
+        const lista = Array.from(agregadoPorMes.values()).sort((a, b) => String(a.mesRef).localeCompare(String(b.mesRef)));
         if (alive) setPatrimonioHistorico(lista);
       } catch (e) {
         if (e?.code !== "permission-denied") console.warn("[Dashboard] Falha agregando snapshots:", e?.code);
