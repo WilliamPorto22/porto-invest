@@ -14,7 +14,8 @@
     "smoke": "node scripts/smoke-test.mjs",
     "smoke:local": "node scripts/smoke-build-local.mjs",
     "smoke:prod": "node scripts/smoke-test.mjs --route=/ --route=/dashboard --route=/cliente/AHXx4mVNzPpbn9PszKO",
-    "deploy": "npm run smoke:local && firebase deploy --only hosting --project william-porto && npm run smoke:prod"
+    "deploy": "npm run smoke:local && firebase deploy --only hosting --project william-porto && npm run smoke:prod",
+    "salvar": "node scripts/salvar.mjs"
   },
   "dependencies": {
     "firebase": "^12.12.0",
