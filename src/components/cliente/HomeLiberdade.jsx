@@ -13,7 +13,7 @@ import SliderAcelerar from "./SliderAcelerar";
 import SaudeFinanceira from "./SaudeFinanceira";
 import Confetti from "./Confetti";
 import OnboardingCliente from "./OnboardingCliente";
-import HistoricoPatrimonio from "./HistoricoPatrimonio";
+import EvolucaoPatrimonialMensal from "./EvolucaoPatrimonialMensal";
 import CardAporteCliente from "./CardAporteCliente";
 import Tooltip from "../Tooltip";
 import "../../styles/liberdade.css";
@@ -321,7 +321,7 @@ function ToastPush({ msg, onClose }) {
 }
 
 // ── Componente principal ──────────────────────────────────────
-export default function HomeLiberdade({ cliente, clienteId }) {
+export default function HomeLiberdade({ cliente, clienteId, snapshots = [] }) {
   const objetivos = useMemo(() => cliente?.objetivos || [], [cliente]);
 
   // Calcula meta de liberdade financeira:
@@ -439,7 +439,7 @@ export default function HomeLiberdade({ cliente, clienteId }) {
           o diaAporte do cliente (caso contrário retorna null). */}
       <CardAporteCliente cliente={cliente} clienteId={clienteId} />
 
-      <HistoricoPatrimonio clienteId={clienteId} />
+      <EvolucaoPatrimonialMensal snapshots={snapshots} cliente={cliente} clienteId={clienteId} />
 
       <ProximosPassos passos={passos} clienteId={clienteId} />
 

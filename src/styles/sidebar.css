@@ -411,14 +411,21 @@
 }
 
 /* Único item realmente ATIVO = página atual */
-.sidebar-item.active .sidebar-item-head {
+.sidebar-item.active .sidebar-item-head,
+.sidebar-item-head[aria-current="page"] {
   color: var(--sbar-text-active);
-  background: rgba(52, 163, 148, 0.12);
+  background: rgba(52, 163, 148, 0.18);
+  font-weight: 500;
 }
-.sidebar-item.active .sidebar-item-head::before {
+.sidebar-item.active .sidebar-item-head .sidebar-icon,
+.sidebar-item-head[aria-current="page"] .sidebar-icon {
+  color: var(--sbar-text-active);
+}
+.sidebar-item.active .sidebar-item-head::before,
+.sidebar-item-head[aria-current="page"]::before {
   content: "";
   position: absolute;
-  left: -4px;
+  left: 0;
   top: 50%;
   transform: translateY(-50%);
   width: 3px;

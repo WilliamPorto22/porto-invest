@@ -33,23 +33,38 @@ export default function HistoricoMensalChart({
   // Ordena cronologicamente (mais antigo → mais recente)
   const itens = [...items].sort((a, b) => String(a.mesRef).localeCompare(String(b.mesRef)));
 
-  const valores = itens.map((i) => Number(i.valor) || 0);
-  const min = Math.min(...valores);
-  const max = Math.max(...valores);
-  // Se a variação for muito pequena, força um range mínimo pra linha não ficar plana
+  // Detecta o "mês atual sem dado real" (valor=0 com mês anterior > 0).
+  // Em vez de mostrar -100% e "—" assustadores, marca como "aguardando".
+  const itensSeguros = itens.map((it, i) => {
+    const v = Number(it.valor) || 0;
+    const prev = i > 0 ? Number(itens[i - 1].valor) || 0 : 0;
+    const aguardando = v <= 0 && prev > 0;
+    return { ...it, _aguardando: aguardando };
+  });
+
+  const valores = itensSeguros.map((i) => Number(i.valor) || 0);
+  // Para o range, ignora pontos "aguardando" pra não esmagar a linha pra zero.
+  const valoresPlot = itensSeguros.map((it, i) =>
+    it._aguardando && i > 0 ? valores[i - 1] : valores[i]
+  );
+  const min = Math.min(...valoresPlot);
+  const max = Math.max(...valoresPlot);
   const range = (max - min) || Math.max(1, Math.abs(max) * 0.05);
 
-  // Layout
-  const cardW = 140;
-  const totalW = Math.max(itens.length * cardW, 360);
+  // Layout responsivo: cards flexíveis preenchendo a largura.
+  // Quando há muitos itens (>8), cai pra largura fixa com scroll-x; até 8,
+  // os cards se distribuem em flex:1 e o SVG escala via viewBox.
+  const useResponsive = itens.length <= 8;
+  const cardW = 140; // largura virtual usada no viewBox + fallback de scroll
+  const totalW = itens.length * cardW;
   const chartH = 96;
   const padY = 18;
   const padX = cardW / 2;
 
-  // Posicionamento de cada ponto
-  const pontos = itens.map((it, i) => ({
+  // Posicionamento de cada ponto (coords no viewBox)
+  const pontos = itensSeguros.map((it, i) => ({
     x: i * cardW + padX,
-    y: padY + (1 - (valores[i] - min) / range) * (chartH - padY * 2),
+    y: padY + (1 - (valoresPlot[i] - min) / range) * (chartH - padY * 2),
     valor: valores[i],
     item: it,
   }));
@@ -81,18 +96,38 @@ export default function HistoricoMensalChart({
         </div>
       )}
 
-      <div className="pi-scroll-x" style={{ overflowX: "auto", WebkitOverflowScrolling: "touch", paddingBottom: 4 }}>
-        <div style={{ position: "relative", width: totalW, height: chartH + 110 }}>
+      <div
+        className={useResponsive ? "" : "pi-scroll-x"}
+        style={{
+          overflowX: useResponsive ? "visible" : "auto",
+          WebkitOverflowScrolling: "touch",
+          paddingBottom: 4,
+        }}
+      >
+        <div style={{
+          position: "relative",
+          width: useResponsive ? "100%" : totalW,
+          height: chartH + 130,
+        }}>
 
           {/* Header: nome do mês */}
-          <div style={{ display: "flex", position: "absolute", top: 0, left: 0, width: totalW, height: 30 }}>
-            {itens.map((it, i) => {
+          <div style={{
+            display: "flex",
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: 30,
+          }}>
+            {itensSeguros.map((it, i) => {
               const isUltimo = destacarUltimo && i === idxAtual;
               const label = formatarMesRef(it.mesRef);
               const [mes, ano] = label.split("/");
               return (
                 <div key={it.mesRef} style={{
-                  width: cardW, textAlign: "center",
+                  flex: useResponsive ? 1 : `0 0 ${cardW}px`,
+                  width: useResponsive ? "auto" : cardW,
+                  textAlign: "center",
                   fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase",
                   color: isUltimo ? T.gold : T.textMuted,
                   fontWeight: isUltimo ? 600 : 400,
@@ -105,11 +140,14 @@ export default function HistoricoMensalChart({
             })}
           </div>
 
-          {/* SVG: linha + área */}
+          {/* SVG: somente linha + área (esticada via preserveAspectRatio=none).
+              Os círculos vão como overlay HTML pra evitar esmagamento em elipse. */}
           <svg
-            width={totalW}
+            width={useResponsive ? "100%" : totalW}
             height={chartH}
-            style={{ position: "absolute", top: 32, left: 0, overflow: "visible" }}
+            viewBox={`0 0 ${totalW} ${chartH}`}
+            preserveAspectRatio="none"
+            style={{ position: "absolute", top: 32, left: 0, overflow: "visible", pointerEvents: "none" }}
           >
             <defs>
               <linearGradient id="histAreaGold" x1="0" x2="0" y1="0" y2="1">
@@ -134,41 +172,90 @@ export default function HistoricoMensalChart({
                   strokeWidth="2"
                   strokeLinecap="round"
                   opacity="0.85"
+                  vectorEffect="non-scaling-stroke"
                 />
-              );
-            })}
-
-            {pontos.map((p, i) => {
-              const isUltimo = destacarUltimo && i === idxAtual;
-              const cor = isUltimo
-                ? T.gold
-                : (i > 0 ? corSegmento(pontos[i - 1].valor, p.valor) : "#22c55e");
-              return (
-                <g key={i}>
-                  {isUltimo && <circle cx={p.x} cy={p.y} r="9" fill={cor} opacity="0.18" />}
-                  <circle
-                    cx={p.x} cy={p.y}
-                    r={isUltimo ? 6 : 5}
-                    fill={isUltimo ? "#0f1620" : cor}
-                    stroke={cor}
-                    strokeWidth={isUltimo ? 2.5 : 2}
-                  />
-                  <title>{formatValorTooltip(p.valor)}</title>
-                </g>
               );
             })}
           </svg>
 
-          {/* Cards clicáveis embaixo */}
-          <div style={{ display: "flex", position: "absolute", top: chartH + 36, left: 0, width: totalW, gap: 0 }}>
-            {itens.map((it, i) => {
+          {/* Bolinhas como overlay HTML — posicionadas em % pra ficarem perfeitamente
+              redondas independente do quanto o SVG estica horizontalmente. */}
+          <div style={{
+            position: "absolute",
+            top: 32,
+            left: 0,
+            width: "100%",
+            height: chartH,
+            pointerEvents: "none",
+          }}>
+            {pontos.map((p, i) => {
               const isUltimo = destacarUltimo && i === idxAtual;
+              const aguardando = p.item._aguardando;
+              const cor = isUltimo
+                ? T.gold
+                : (i > 0 ? corSegmento(pontos[i - 1].valor, p.valor) : "#22c55e");
+              const xPct = (p.x / totalW) * 100;
+              const yPct = (p.y / chartH) * 100;
+              const dotSize = isUltimo ? 12 : 10;
+              const haloSize = 22;
+              return (
+                <div key={i}>
+                  {isUltimo && !aguardando && (
+                    <div style={{
+                      position: "absolute",
+                      left: `${xPct}%`,
+                      top: `${yPct}%`,
+                      width: haloSize,
+                      height: haloSize,
+                      marginLeft: -haloSize / 2,
+                      marginTop: -haloSize / 2,
+                      borderRadius: "50%",
+                      background: cor,
+                      opacity: 0.18,
+                    }} />
+                  )}
+                  <div
+                    title={aguardando ? "Aguardando importação" : formatValorTooltip(p.valor)}
+                    style={{
+                      position: "absolute",
+                      left: `${xPct}%`,
+                      top: `${yPct}%`,
+                      width: dotSize,
+                      height: dotSize,
+                      marginLeft: -dotSize / 2,
+                      marginTop: -dotSize / 2,
+                      borderRadius: "50%",
+                      background: (isUltimo || aguardando) ? "#0f1620" : cor,
+                      border: `${isUltimo ? 2.5 : 2}px solid ${cor}`,
+                      boxSizing: "border-box",
+                    }}
+                  />
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Cards clicáveis embaixo */}
+          <div style={{
+            display: "flex",
+            position: "absolute",
+            top: chartH + 36,
+            left: 0,
+            width: "100%",
+            gap: 8,
+            alignItems: "stretch",
+          }}>
+            {itensSeguros.map((it, i) => {
+              const isUltimo = destacarUltimo && i === idxAtual;
+              const aguardando = it._aguardando;
               const rentN = Number(it.rentMes);
-              const temRent = !isNaN(rentN) && it.rentMes != null;
+              const temRent = !isNaN(rentN) && it.rentMes != null && !aguardando;
               const corRent = !temRent ? T.textMuted : (rentN > 0 ? "#22c55e" : rentN < 0 ? "#ef4444" : T.textMuted);
               const valor = valores[i];
               const valorPrev = i > 0 ? valores[i - 1] : null;
-              const variacao = valorPrev != null ? ((valor - valorPrev) / Math.max(1, Math.abs(valorPrev))) * 100 : null;
+              const variacao = (!aguardando && valorPrev != null && valorPrev > 0)
+                ? ((valor - valorPrev) / Math.abs(valorPrev)) * 100
+                : null;
 
               return (
                 <button
@@ -176,15 +263,21 @@ export default function HistoricoMensalChart({
                   onClick={() => onSelect && onSelect(it)}
                   className={isUltimo ? "pi-hist-card-atual" : "pi-hist-card-passado"}
                   style={{
-                    width: cardW - 8,
-                    margin: "0 4px",
+                    flex: useResponsive ? 1 : `0 0 ${cardW - 8}px`,
+                    width: useResponsive ? "auto" : cardW - 8,
+                    minHeight: 96,
                     border: `0.5px solid ${isUltimo ? T.goldBorder : T.border}`,
                     borderRadius: T.radiusMd,
-                    padding: "10px 10px 12px",
+                    padding: "12px 10px 14px",
                     cursor: onSelect ? "pointer" : "default",
                     fontFamily: T.fontFamily,
                     textAlign: "center",
                     transition: "border-color 0.15s, background 0.15s, transform 0.15s",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "flex-start",
+                    gap: 4,
                   }}
                   onMouseEnter={(e) => {
                     if (!onSelect) return;
@@ -198,27 +291,40 @@ export default function HistoricoMensalChart({
                   <div style={{
                     fontSize: 14, color: isUltimo ? T.gold : T.textPrimary,
                     fontWeight: 500, fontVariantNumeric: "tabular-nums",
-                    letterSpacing: "-0.01em", marginBottom: 4,
+                    letterSpacing: "-0.01em",
                   }}>
-                    {formatValor(valor)}
+                    {aguardando ? "—" : formatValor(valor)}
                   </div>
-                  <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 6 }}>
-                    {temRent && (
-                      <span style={{ fontSize: 10, color: corRent, fontVariantNumeric: "tabular-nums", fontWeight: 500 }}>
-                        {rentN > 0 ? "+" : ""}{rentN.toFixed(2)}%
-                      </span>
-                    )}
-                    {variacao != null && Math.abs(variacao) >= 0.01 && (
-                      <span style={{
-                        fontSize: 9,
-                        color: variacao >= 0 ? "#22c55e" : "#ef4444",
-                        opacity: 0.7,
-                        ...noSel,
-                      }}>
-                        {variacao >= 0 ? "▲" : "▼"} {Math.abs(variacao).toFixed(1)}%
-                      </span>
-                    )}
-                  </div>
+                  {aguardando ? (
+                    <div style={{
+                      fontSize: 9,
+                      color: T.textMuted,
+                      opacity: 0.85,
+                      letterSpacing: "0.06em",
+                      textTransform: "uppercase",
+                      ...noSel,
+                    }}>
+                      aguardando importação
+                    </div>
+                  ) : (
+                    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 6, minHeight: 14 }}>
+                      {temRent && (
+                        <span style={{ fontSize: 10, color: corRent, fontVariantNumeric: "tabular-nums", fontWeight: 500 }}>
+                          {rentN > 0 ? "+" : ""}{rentN.toFixed(2)}%
+                        </span>
+                      )}
+                      {variacao != null && Math.abs(variacao) >= 0.01 && (
+                        <span style={{
+                          fontSize: 9,
+                          color: variacao >= 0 ? "#22c55e" : "#ef4444",
+                          opacity: 0.7,
+                          ...noSel,
+                        }}>
+                          {variacao >= 0 ? "▲" : "▼"} {Math.abs(variacao).toFixed(1)}%
+                        </span>
+                      )}
+                    </div>
+                  )}
                   {/* Badges secundários — aporte (roxo) e rendimentos (verde) */}
                   {(it.aporte != null && Number(it.aporte) > 0) || (it.rendimentos != null && Number(it.rendimentos) > 0) ? (
                     <div style={{ marginTop: 6, display: "flex", flexDirection: "column", gap: 3, alignItems: "center" }}>

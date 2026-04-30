@@ -1067,22 +1067,38 @@ export default function Dashboard(){
         {/* ── fim da SEÇÃO INICIAL ── */}
 
         {/* ── EVOLUÇÃO DO PATRIMÔNIO SOB GESTÃO ── */}
-        {patrimonioHistorico.length >= 2 && (
-          <div style={{ padding: "0 24px", marginTop: 32 }}>
-            <div style={{
-              fontSize: 13, color: "#94A7BF", textTransform: "uppercase",
-              letterSpacing: "0.14em", marginBottom: 14,
-              display: "flex", alignItems: "center", gap: 12,
-            }}>
-              <div style={{ width: 32, height: 2, background: "#F0A202", opacity: 0.8, borderRadius: 1 }} />
-              Evolução do patrimônio sob gestão
-            </div>
+        <div style={{ padding: "0 24px", marginTop: 32 }}>
+          <div style={{
+            fontSize: 13, color: "#94A7BF", textTransform: "uppercase",
+            letterSpacing: "0.14em", marginBottom: 14,
+            display: "flex", alignItems: "center", gap: 12,
+          }}>
+            <div style={{ width: 32, height: 2, background: "#F0A202", opacity: 0.8, borderRadius: 1 }} />
+            Evolução do patrimônio sob gestão
+          </div>
+          {patrimonioHistorico.length >= 1 ? (
             <HistoricoMensalChart
               items={patrimonioHistorico}
               descricao="Soma do patrimônio de todos os clientes mês a mês — agregado a partir dos snapshots mensais salvos. Mostra crescimento da carteira sob gestão."
             />
-          </div>
-        )}
+          ) : (
+            <div style={{
+              border: "0.5px solid rgba(62,92,118,0.35)",
+              background: "rgba(255,255,255,0.02)",
+              borderRadius: 18,
+              padding: "32px 22px",
+              textAlign: "center",
+            }}>
+              <div style={{ fontSize: 32, marginBottom: 10, opacity: 0.55 }}>📈</div>
+              <div style={{ fontSize: 13, color: "#F0EBD8", fontWeight: 500, marginBottom: 6 }}>
+                Nenhum snapshot mensal agregado ainda
+              </div>
+              <div style={{ fontSize: 11, color: "#94A7BF", maxWidth: 480, margin: "0 auto", lineHeight: 1.6 }}>
+                Cada cliente que tiver pelo menos um PDF importado contribui para este gráfico. Importe extratos nas carteiras dos clientes para começar a ver a custódia evoluir mês a mês.
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Respiro entre a seção inicial (mercado/cards) e a seção de clientes abaixo */}
         <div style={{ height: 48 }} aria-hidden="true" />
@@ -1247,7 +1263,7 @@ export default function Dashboard(){
               {clientesFiltrados.length===0
                 ?<div className="dashboard-no-results">Nenhum cliente encontrado.</div>
                 :clientesFiltrados.map(c=>(
-                  <ClientCard key={c.id} c={c} onClick={()=>nav(`/cliente/${c.id}`)}
+                  <ClientCard key={c.id} c={c} onClick={()=>nav(`/cliente/${c.id}/painel`)}
                     sAporte={c._sAporte} sRevisao={c._sRevisao}
                     inviavel={c._inviavel} followUp={c._followUp} sReserva={c._sReserva}/>
                 ))
@@ -1271,7 +1287,7 @@ export default function Dashboard(){
                       </div>
                     ):(
                       porSeg[seg].map(c=>(
-                        <ClientCard key={c.id} c={c} onClick={()=>nav(`/cliente/${c.id}`)}
+                        <ClientCard key={c.id} c={c} onClick={()=>nav(`/cliente/${c.id}/painel`)}
                           sAporte={c._sAporte} sRevisao={c._sRevisao}
                           inviavel={c._inviavel} followUp={c._followUp} sReserva={c._sReserva}/>
                       ))

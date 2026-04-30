@@ -8,7 +8,7 @@ import { Sidebar } from "../components/Sidebar";
 import { Navbar } from "../components/Navbar";
 import PainelClienteShared from "../components/cliente/PainelClienteShared";
 import { perfilCompleto } from "../utils/perfilCompleto";
-import { garantirSnapshotMensalAuto } from "../services/snapshotsCarteira";
+import { garantirSnapshotMensalAuto, listarSnapshots } from "../services/snapshotsCarteira";
 
 /**
  * MeHome — Página inicial dedicada do cliente final.
@@ -24,6 +24,7 @@ export default function MeHome() {
   const { profile, role, loading: authLoading } = useAuth();
   const [cliente, setCliente] = useState(null);
   const [carregandoCliente, setCarregandoCliente] = useState(true);
+  const [snapshots, setSnapshots] = useState([]);
 
   const clienteId = profile?.clienteId;
 
@@ -70,6 +71,16 @@ export default function MeHome() {
       .catch(() => { /* silencia falha de permissão/offline */ });
   }, [cliente, clienteId]);
 
+  // 4) Lista de snapshots para alimentar o gráfico de evolução mensal
+  useEffect(() => {
+    if (!clienteId) return;
+    let alive = true;
+    listarSnapshots(clienteId)
+      .then((lista) => { if (alive) setSnapshots(lista || []); })
+      .catch(() => { /* sem snapshots */ });
+    return () => { alive = false; };
+  }, [clienteId, cliente]);
+
   if (authLoading) {
     return (
       <div className="protected-loading">
@@ -113,7 +124,7 @@ export default function MeHome() {
         className="dashboard-content with-sidebar cliente-zoom"
         style={{ maxWidth: 1280, margin: "0 auto", padding: "28px 28px 60px" }}
       >
-        <PainelClienteShared cliente={cliente} clienteId={clienteId} />
+        <PainelClienteShared cliente={cliente} clienteId={clienteId} snapshots={snapshots} />
       </div>
     </div>
   );

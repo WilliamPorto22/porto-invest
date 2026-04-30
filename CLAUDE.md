@@ -12,7 +12,7 @@ npm run test         # Vitest watch mode
 npm run test:run     # Vitest single run
 npm run test:ui      # Vitest UI
 npx vitest run src/utils/__tests__/currency.test.js   # single test file
-firebase deploy --only hosting     # deploy dist/ to william-porto.web.app
+firebase deploy --only hosting     # deploy dist/ + dist-redirect/ (sites: porto-invest, william-porto)
 firebase deploy --only functions   # deploy Cloud Functions (region: southamerica-east1)
 ```
 
@@ -91,5 +91,5 @@ Sidebar behavior (see [src/components/Sidebar.jsx](src/components/Sidebar.jsx)):
 
 - Currency in UI: use `brl` from [src/utils/currency.js](src/utils/currency.js) or the `brlNum` wrapper in Dashboard. Always parse stored strings through `parseCentavos`, never `parseFloat` directly.
 - Styles are plain CSS under [src/styles/](src/styles/) (`globals.css`, `components.css`, `navbar.css`, `sidebar.css`, `responsive.css`) plus some scoped inline style objects. No CSS-in-JS library.
-- Firestore config is hard-coded in [src/firebase.js](src/firebase.js) — there is no `.env`. The Firebase project is `william-porto`; deployed site is `https://william-porto.web.app`.
+- Firestore config is hard-coded in [src/firebase.js](src/firebase.js) — there is no `.env`. The Firebase project is `william-porto` (ID interno do GCP, não muda). O site canônico é **`https://porto-invest.web.app`** (servido de `dist/`). O domínio antigo `https://william-porto.web.app` continua existindo como redirect automático (`dist-redirect/`) pra preservar bookmarks/links externos. `authDomain` no SDK fica como `william-porto.firebaseapp.com` por ser o domínio fixo do Firebase Auth — não confundir com hosting site.
 - ESLint rule `no-unused-vars` allows unused identifiers that start with uppercase or `_` (useful for imports kept for JSX re-exports). The repo currently has ~45 warnings; don't treat every lint message as blocking.

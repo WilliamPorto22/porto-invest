@@ -8,7 +8,7 @@ import { Sidebar } from "../components/Sidebar";
 import { Navbar } from "../components/Navbar";
 import PainelClienteShared from "../components/cliente/PainelClienteShared";
 import { perfilCompleto } from "../utils/perfilCompleto";
-import { garantirSnapshotMensalAuto } from "../services/snapshotsCarteira";
+import { garantirSnapshotMensalAuto, listarSnapshots } from "../services/snapshotsCarteira";
 
 /**
  * ClientePainel — Painel premium do cliente, visto pelo assessor/master.
@@ -29,6 +29,7 @@ export default function ClientePainel() {
   const { isCliente, loading: authLoading } = useAuth();
   const [cliente, setCliente] = useState(null);
   const [carregando, setCarregando] = useState(true);
+  const [snapshots, setSnapshots] = useState([]);
 
   // 1) Hidratação rápida via cache + fallback
   useEffect(() => {
@@ -73,6 +74,15 @@ export default function ClientePainel() {
       .then(() => { try { localStorage.setItem(guardKey, "1"); } catch { /* noop */ } })
       .catch(() => { /* silencia */ });
   }, [cliente, clienteId]);
+
+  useEffect(() => {
+    if (!clienteId) return;
+    let alive = true;
+    listarSnapshots(clienteId)
+      .then((lista) => { if (alive) setSnapshots(lista || []); })
+      .catch(() => { /* sem snapshots */ });
+    return () => { alive = false; };
+  }, [clienteId, cliente]);
 
   if (authLoading) {
     return (
@@ -154,7 +164,7 @@ export default function ClientePainel() {
           </div>
         </div>
 
-        <PainelClienteShared cliente={cliente} clienteId={clienteId} />
+        <PainelClienteShared cliente={cliente} clienteId={clienteId} snapshots={snapshots} />
       </div>
     </div>
   );

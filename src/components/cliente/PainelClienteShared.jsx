@@ -1,6 +1,6 @@
 import HomeLiberdade from "./HomeLiberdade";
 import ChecklistOnboardingCliente from "./ChecklistOnboardingCliente";
-import PatrimonioConsolidadoCliente from "./PatrimonioConsolidadoCliente";
+import ResumoPatrimonialCliente from "./ResumoPatrimonialCliente";
 import { perfilCompleto } from "../../utils/perfilCompleto";
 
 /**
@@ -17,7 +17,7 @@ import { perfilCompleto } from "../../utils/perfilCompleto";
  * Este componente NÃO renderiza Sidebar/Navbar — quem chama é responsável
  * pelo layout externo.
  */
-export default function PainelClienteShared({ cliente, clienteId }) {
+export default function PainelClienteShared({ cliente, clienteId, snapshots = [] }) {
   if (!cliente || !clienteId) return null;
 
   const status = perfilCompleto(cliente);
@@ -31,8 +31,10 @@ export default function PainelClienteShared({ cliente, clienteId }) {
           primeiroNome={primeiroNome}
         />
       )}
-      <HomeLiberdade cliente={cliente} clienteId={clienteId} />
-      <PatrimonioConsolidadoCliente cliente={cliente} />
+      <HomeLiberdade cliente={cliente} clienteId={clienteId} snapshots={snapshots} />
+      <div style={{ marginTop: 28 }}>
+        <ResumoPatrimonialCliente cliente={cliente} snapshots={snapshots} />
+      </div>
     </>
   );
 }

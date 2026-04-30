@@ -545,6 +545,38 @@ export async function garantirSnapshotMensalAuto(clienteId, cliente, opts = {}) 
     return { mesRef, criou: false, escreveu: false };
   }
 
+  // Defesa contra carteira viva desatualizada: se existe um snapshot recente
+  // vindo de PDF com patrimônio muito maior que a carteira atual, é provável
+  // que o usuário importou PDFs de meses passados mas não clicou em "Salvar"
+  // a carteira viva no Firestore. Nesse caso, escrever um auto-snapshot
+  // zerado/baixo cria uma "queda fantasma" no gráfico (o bug que motivou
+  // este guard). Pula a escrita quando a queda é > 60% vs último PDF.
+  try {
+    const colRef = collection(db, "clientes", clienteId, "snapshotsCarteira");
+    const qRef = query(colRef, orderBy("mesRef", "desc"), limit(6));
+    const snapList = await getDocs(qRef);
+    let ultimoPdf = null;
+    snapList.forEach((d) => {
+      const data = d.data();
+      if (data?.fonte && data.fonte !== "auto" && d.id < mesRef) {
+        if (!ultimoPdf) ultimoPdf = data;
+      }
+    });
+    if (ultimoPdf && Number(ultimoPdf.patrimonioTotal) > 0) {
+      const ratio = total / Number(ultimoPdf.patrimonioTotal);
+      if (ratio < 0.4) {
+        console.warn(
+          "[snapshotAuto] Pulando escrita — carteira viva (R$",
+          total.toFixed(2),
+          ") muito menor que último PDF (R$",
+          Number(ultimoPdf.patrimonioTotal).toFixed(2),
+          "). Provavelmente carteira não foi salva após import."
+        );
+        return { mesRef, criou: false, escreveu: false, motivo: "carteira-desatualizada" };
+      }
+    }
+  } catch { /* segue — guard é best-effort */ }
+
   const aporte = aporteDoMes(cliente.aportesHistorico, mesRef);
   const dadosAntigos = existente.exists() ? existente.data() : null;
   const patrimonioAnterior = dadosAntigos?.patrimonioTotal || null;

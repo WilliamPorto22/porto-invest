@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import {
   EmailAuthProvider,
   reauthenticateWithCredential,
@@ -27,6 +27,14 @@ import { Navbar } from "../components/Navbar";
 export default function ResetPassword() {
   const { user, profile, loading, isCliente } = useAuth();
   const nav = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // Quando o assessor clica "Trocar senha" pelo menu lateral DENTRO do contexto
+  // de um cliente, o link traz `?cliente=<id>` — mantemos a sidebar do cliente
+  // e oferecemos "Voltar ao painel". Sem o param, modo admin normal.
+  const clienteContextoId = searchParams.get("cliente");
+  const sidebarMode = isCliente || clienteContextoId ? "cliente" : "admin";
+  const sidebarClienteId = isCliente ? profile?.clienteId : clienteContextoId;
   const [senhaAtual, setSenhaAtual] = useState("");
   const [novaSenha, setNovaSenha] = useState("");
   const [confirmar, setConfirmar] = useState("");
@@ -144,11 +152,22 @@ export default function ResetPassword() {
   return (
     <div className="dashboard-container has-sidebar">
       <Sidebar
-        mode={isCliente ? "cliente" : "admin"}
-        clienteId={isCliente ? profile?.clienteId : null}
+        mode={sidebarMode}
+        clienteId={sidebarClienteId}
         clienteNome={isCliente ? profile?.nome : null}
       />
-      <Navbar showLogout={true} />
+      <Navbar
+        showLogout={true}
+        actionButtons={!isCliente && clienteContextoId ? [
+          {
+            icon: "←",
+            label: "Voltar ao painel",
+            variant: "secondary",
+            onClick: () => nav(`/cliente/${clienteContextoId}/painel`),
+            title: "Voltar ao painel do cliente",
+          },
+        ] : []}
+      />
       <div
         className="dashboard-content with-sidebar cliente-zoom"
         style={{ maxWidth: 1280, margin: "0 auto", padding: "28px 28px 60px", display: "flex", justifyContent: "center" }}

@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import DonutChartModern from "../DonutChartModern";
-import HistoricoMensalChart from "../HistoricoMensalChart";
+import { RentabilidadeVsIPCA } from "./RentabilidadeChart";
 import { brl, brlCompact } from "../../utils/currency";
 import { CLASSES_CARTEIRA } from "../../utils/ativos";
 import {
@@ -78,7 +78,19 @@ export default function ResumoPatrimonialCliente({ cliente, snapshots = [] }) {
       .map((c) => ({ ...c, valor: somaClasse(carteira, c.key) }))
       .filter((c) => c.valor > 0);
 
+    // Rentabilidade anual — mesma prioridade do ClienteFicha:
+    // rent12m (PDF) > rentAno (PDF) > rentabilidadeCalculada (ponderada) > rentabilidadeAnual (manual)
+    const rent12mPdf = carteira?.rent12m != null ? Number(carteira.rent12m) : null;
+    const rentAnoPdf = carteira?.rentAno != null ? Number(carteira.rentAno) : null;
+    const rentCalc = parseFloat(String(carteira?.rentabilidadeCalculada || "").replace(",", "."));
+    const rentManual = parseFloat(String(cliente?.rentabilidadeAnual || "").replace(",", "."));
+    const rentAnual = rent12mPdf != null ? rent12mPdf
+      : rentAnoPdf != null ? rentAnoPdf
+      : (!isNaN(rentCalc) && rentCalc > 0) ? rentCalc
+      : (!isNaN(rentManual) && rentManual > 0 ? rentManual : null);
+
     return {
+      rentAnual,
       totalConsolidado,
       categorias: [
         { key: "fin", label: "Investimentos", valor: fin, cor: "#F0A202" },
@@ -247,81 +259,57 @@ export default function ResumoPatrimonialCliente({ cliente, snapshots = [] }) {
         </div>
       </div>
 
-      {/* ── LINHA 2: Histórico mensal + Distribuição por Classes ── */}
-      {(snapshots && snapshots.length > 0) && (
-        <div style={{ ...CARD, marginBottom: 14, padding: "20px 22px" }}>
-          <div style={TITULO}>Evolução do Patrimônio (mês a mês)</div>
-          <HistoricoMensalChart
-            items={snapshots.map((s) => ({
-              mesRef: s.mesRef,
-              valor: Number(s.patrimonioTotal) || 0,
-              rentMes: s.rentMes,
-              aporte: Number(s.resumoMes?.aportes) || 0,
-              rendimentos: Number(s.resumoMes?.dividendos || 0) + Number(s.resumoMes?.juros || 0),
-              meta: s,
-            }))}
-            descricao={null}
-          />
-        </div>
-      )}
-
-      {dados.classesCarteira.length > 0 && (
-        <div style={{ ...CARD, marginBottom: 14 }}>
-          <div style={TITULO}>Distribuição por Classes (carteira)</div>
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "minmax(180px, 220px) 1fr",
-            gap: 22,
-            alignItems: "center",
-          }}
-          className="resumo-classes-grid"
-          >
-            <div style={{ display: "flex", justifyContent: "center" }}>
-              <DonutChartModern
-                data={dados.classesCarteira.map((c) => ({
-                  key: c.key, label: c.label, valor: c.valor, cor: c.cor,
-                }))}
-                total={dados.carteiraTotal}
-                size={180}
-                thickness={22}
-                labelCentro="TOTAL"
-              />
+      {/* ── LINHA RENTABILIDADE + CLASSES ───────────────────────── */}
+      {(dados.rentAnual != null || dados.classesCarteira.length > 0) && (
+        <div className="resumo-rent-classes" style={{
+          display: "grid",
+          gridTemplateColumns: dados.classesCarteira.length > 0 ? "minmax(0, 1.8fr) minmax(0, 1fr)" : "1fr",
+          gap: 14,
+          marginBottom: 14,
+          alignItems: "stretch",
+        }}>
+          {dados.rentAnual != null && (
+            <RentabilidadeVsIPCA rentAnual={dados.rentAnual} ipcaAnual={4.14} meses={12} metaExtra={6} />
+          )}
+          {dados.classesCarteira.length > 0 && (
+            <div style={{ ...CARD, padding: "20px 22px" }}>
+              <div style={{ ...TITULO, marginBottom: 10 }}>Distribuição por Classes</div>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
+                <DonutChartModern
+                  data={dados.classesCarteira.map((c) => ({
+                    key: c.key, label: c.label, valor: c.valor, cor: c.cor,
+                  }))}
+                  total={dados.carteiraTotal}
+                  size={150}
+                  thickness={20}
+                  labelCentro="TOTAL"
+                />
+                <div style={{
+                  width: "100%",
+                  display: "grid",
+                  gridTemplateColumns: dados.classesCarteira.length >= 5 ? "repeat(2, minmax(0, 1fr))" : "1fr",
+                  gap: "4px 10px",
+                }}>
+                  {dados.classesCarteira.map((c) => {
+                    const pct = dados.carteiraTotal > 0
+                      ? Math.round((c.valor / dados.carteiraTotal) * 100)
+                      : 0;
+                    return (
+                      <div key={c.key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, fontSize: 11 }}>
+                        <span style={{ display: "flex", alignItems: "center", gap: 6, color: "#F0EBD8", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          <span style={{ width: 8, height: 8, borderRadius: 2, background: c.cor, flexShrink: 0 }} />
+                          {c.label}
+                        </span>
+                        <span style={{ color: c.cor, fontVariantNumeric: "tabular-nums", fontWeight: 500 }}>
+                          {pct}%
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
-            <div style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-              gap: 10,
-            }}
-            className="resumo-classes-list"
-            >
-              {dados.classesCarteira.map((c) => {
-                const pct = dados.carteiraTotal > 0
-                  ? Math.round((c.valor / dados.carteiraTotal) * 100)
-                  : 0;
-                return (
-                  <div key={c.key} style={{
-                    padding: "10px 12px",
-                    background: "rgba(255,255,255,0.025)",
-                    border: `1px solid ${c.cor}28`,
-                    borderRadius: 10,
-                  }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                      <span style={{ fontSize: 12, color: "#F0EBD8", display: "flex", alignItems: "center", gap: 8 }}>
-                        <span style={{ width: 8, height: 8, borderRadius: 2, background: c.cor }} />
-                        {c.label}
-                      </span>
-                      <span style={{ fontSize: 12, color: c.cor, fontWeight: 500, fontVariantNumeric: "tabular-nums" }}>
-                        {pct}%
-                      </span>
-                    </div>
-                    <div style={{ fontSize: 11, color: "#748CAB", marginLeft: 16, fontVariantNumeric: "tabular-nums" }}>
-                      {brl(c.valor)}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          )}
         </div>
       )}
 
@@ -472,8 +460,7 @@ export default function ResumoPatrimonialCliente({ cliente, snapshots = [] }) {
       <style>{`
         @media (max-width: 980px) {
           .resumo-grid-3 { grid-template-columns: 1fr !important; }
-          .resumo-classes-grid { grid-template-columns: 1fr !important; }
-          .resumo-classes-list { grid-template-columns: 1fr !important; }
+          .resumo-rent-classes { grid-template-columns: 1fr !important; }
         }
         @media (max-width: 560px) {
           .resumo-liquidez-grid { grid-template-columns: 1fr !important; }

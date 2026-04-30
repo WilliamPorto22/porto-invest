@@ -28,6 +28,7 @@ import {
   formatarMesRef,
   stripUndefined,
   isAporteSuspeito,
+  garantirSnapshotMensalAuto,
 } from "../services/snapshotsCarteira";
 import { deleteDoc } from "firebase/firestore";
 
@@ -277,6 +278,9 @@ export default function Carteira() {
   const [snapshots, setSnapshots] = useState([]);
   const [snapshotAberto, setSnapshotAberto] = useState(null); // {snapshot, mesRef}
   const [recarregarSnaps, setRecarregarSnaps] = useState(0);
+  // doc completo do cliente — usado pelo auto-snapshot (precisa de carteira +
+  // aportesHistorico). `snap` só tem o objeto carteira, não o doc todo.
+  const [clienteDoc, setClienteDoc] = useState(null);
 
   const fileInputRef = useRef(null);
 
@@ -328,6 +332,7 @@ export default function Carteira() {
           console.info(`[Carteira] Dados carregados via ${result.source}`);
         }
         const data = result.data;
+        setClienteDoc(data);
         setClienteNome(data.nome || "");
         setClienteAvatar(data.avatar || "homem");
         const cats = ["moradia","alimentacao","educacao","cartoes","carro","saude","lazer","assinaturas","seguros","outros"];
@@ -412,15 +417,33 @@ export default function Carteira() {
   }, [id, retryKey]);
 
   // ─── Carregar histórico mensal (snapshots) ───────────────────
-  // Busca em paralelo, sem bloquear o render principal. Falha silenciosa
-  // (a seção simplesmente não aparece se der permission-denied etc.).
+  // Antes de listar, dispara o snapshot automático do mês corrente —
+  // assim, quando o assessor abre direto a Carteira do cliente (sem
+  // passar pelo /painel), o gráfico de evolução já tem pelo menos uma
+  // entrada do mês atual. Idempotente + guard em localStorage.
   useEffect(() => {
     let alive = true;
-    listarSnapshots(id)
-      .then((lista) => { if (alive) setSnapshots(lista || []); })
-      .catch((e) => console.warn("[Carteira] Falha ao listar snapshots:", e?.code));
+    (async () => {
+      if (clienteDoc && id) {
+        const ano = new Date().getFullYear();
+        const mes = String(new Date().getMonth() + 1).padStart(2, "0");
+        const guardKey = `porto_snap_auto_${id}_${ano}-${mes}`;
+        try {
+          if (localStorage.getItem(guardKey) !== "1") {
+            await garantirSnapshotMensalAuto(id, clienteDoc);
+            try { localStorage.setItem(guardKey, "1"); } catch { /* noop */ }
+          }
+        } catch { /* segue mesmo se falhar */ }
+      }
+      try {
+        const lista = await listarSnapshots(id);
+        if (alive) setSnapshots(lista || []);
+      } catch (e) {
+        console.warn("[Carteira] Falha ao listar snapshots:", e?.code);
+      }
+    })();
     return () => { alive = false; };
-  }, [id, retryKey, recarregarSnaps]);
+  }, [id, retryKey, recarregarSnaps, clienteDoc]);
 
   // Apaga snapshot específico (com confirmação) — usado quando o usuário
   // importou o mês errado ou quer reimportar do zero.
@@ -1287,8 +1310,7 @@ export default function Carteira() {
         actionButtons={[
           { icon: "←", label: "Voltar", variant: "secondary", onClick: () => (window.history.length > 1 ? navigate(-1) : navigate(`/cliente/${id}`)), title: "Voltar" },
           { icon: "↑", label: "Importar", onClick: () => fileInputRef.current?.click(), disabled: !!uploadProgress && !uploadProgress.error && uploadProgress.pct < 100 },
-          { icon: "＋", label: "Ativo", variant: "secondary", onClick: () => setClassePicker(true), title: "Adicionar ativo manualmente" },
-          { icon: "＋", label: "Aporte", variant: "secondary", onClick: () => setAporteModal(true) },
+          { icon: "＋", label: "Adicionar", variant: "secondary", onClick: () => setAporteModal(true), title: "Adicionar ativo ou aporte na carteira" },
           isEditing
             ? { icon: "💾", label: salvando ? "Salvando..." : "Salvar", variant: "primary", onClick: salvar, disabled: salvando }
             : { icon: "✎", label: "Editar", variant: "primary", onClick: () => setIsEditing(true) },
@@ -1534,6 +1556,36 @@ export default function Carteira() {
           </div>
         )}
 
+        {/* ── HISTÓRICO MENSAL DE SNAPSHOTS (movido pra cima do Composição
+              em 30/04/2026 — fica como introdução visual da carteira antes
+              da tabela de classes). ── */}
+        {snapshots.length > 0 && (
+          <>
+            <SectionTitle>Evolução da Carteira</SectionTitle>
+            <HistoricoMensalChart
+              items={snapshots.map((s) => {
+                let aporteMes = Number(s.resumoMes?.aportes) || 0;
+                if (!aporteMes && Array.isArray(aportesHistorico)) {
+                  aporteMes = aportesHistorico.reduce((acc, a) => {
+                    if (!a.data) return acc;
+                    const mes = String(a.data).slice(0, 7);
+                    return mes === s.mesRef ? acc + parseCentavos(a.valor) / 100 : acc;
+                  }, 0);
+                }
+                return {
+                  mesRef: s.mesRef,
+                  valor: Number(s.patrimonioTotal) || 0,
+                  rentMes: s.rentMes,
+                  aporte: aporteMes,
+                  meta: s,
+                };
+              })}
+              onSelect={(it) => setSnapshotAberto(it.meta)}
+              descricao='Cada importação de PDF mensal vira uma "foto" da carteira. Aportes do mês aparecem em roxo. Clique em um mês para ver como ela estava naquele período.'
+            />
+          </>
+        )}
+
         {/* ── COMPOSIÇÃO (pizza + tabela) ── */}
         <SectionTitle>Composição da Carteira</SectionTitle>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginBottom: 22 }}>
@@ -1762,36 +1814,6 @@ export default function Carteira() {
             )}
           </div>
         </div>
-
-        {/* ── HISTÓRICO MENSAL DE SNAPSHOTS ── */}
-        {snapshots.length > 0 && (
-          <>
-            <SectionTitle>Evolução da Carteira</SectionTitle>
-            <HistoricoMensalChart
-              items={snapshots.map((s) => {
-                // Aporte do mês: prioriza resumoMes.aportes (do snapshot do PDF);
-                // se não tiver, soma aportesHistorico[] daquele mesRef.
-                let aporteMes = Number(s.resumoMes?.aportes) || 0;
-                if (!aporteMes && Array.isArray(aportesHistorico)) {
-                  aporteMes = aportesHistorico.reduce((acc, a) => {
-                    if (!a.data) return acc;
-                    const mes = String(a.data).slice(0, 7);
-                    return mes === s.mesRef ? acc + parseCentavos(a.valor) / 100 : acc;
-                  }, 0);
-                }
-                return {
-                  mesRef: s.mesRef,
-                  valor: Number(s.patrimonioTotal) || 0,
-                  rentMes: s.rentMes,
-                  aporte: aporteMes,
-                  meta: s,
-                };
-              })}
-              onSelect={(it) => setSnapshotAberto(it.meta)}
-              descricao='Cada importação de PDF mensal vira uma "foto" da carteira. Aportes do mês aparecem em roxo. Clique em um mês para ver como ela estava naquele período.'
-            />
-          </>
-        )}
 
         {/* ── BALANÇO NACIONAL/GLOBAL/PREVIDÊNCIA ── */}
         {(totalNacional > 0 || totalGlobal > 0 || totalPrevidencia > 0) && (
@@ -2909,48 +2931,71 @@ function AporteModal({ onClose, onSave }) {
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: T.bgCard, border: `0.5px solid rgba(168,85,247,0.3)`,
-          borderRadius: T.radiusLg, padding: 24, width: 560, maxWidth: "96vw",
+          background: T.bgCard, border: `0.5px solid ${T.border}`,
+          borderRadius: T.radiusXl,
+          width: 760, maxWidth: "96vw",
           maxHeight: "92vh", overflowY: "auto",
           boxShadow: T.shadowLg,
         }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+        {/* Header com traço lateral roxo (mesmo estilo do AtivoEditor) */}
+        <div style={{
+          padding: "26px 32px 22px",
+          borderBottom: `0.5px solid ${T.border}`,
+          position: "relative",
+          display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16,
+        }}>
+          <div style={{
+            position: "absolute", left: 0, top: 26, bottom: 22, width: 3,
+            background: "#a855f7", borderRadius: "0 2px 2px 0",
+          }} />
           <div>
-            <div style={{ fontSize: 10, color: "#a855f7", textTransform: "uppercase", letterSpacing: "0.14em", marginBottom: 4 }}>+ Aporte</div>
-            <div style={{ fontSize: 17, fontWeight: 400, color: T.textPrimary }}>Registrar aporte com destino</div>
+            <div style={{ fontSize: 11, color: T.textMuted, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 6, ...noSel }}>
+              Adicionar à carteira
+            </div>
+            <div style={{ fontSize: 24, fontWeight: 300, color: T.textPrimary, letterSpacing: "-0.01em" }}>
+              Ativo ou aporte
+            </div>
+            <div style={{ fontSize: 12, color: T.textSecondary, marginTop: 6, letterSpacing: "0.02em", lineHeight: 1.55 }}>
+              Registre um aporte do mês e/ou inclua o ativo correspondente na carteira em uma única tela.
+            </div>
           </div>
           <button onClick={onClose} style={{
             background: "rgba(255,255,255,0.04)", border: `0.5px solid ${T.border}`,
-            borderRadius: "50%", width: 30, height: 30, color: T.textSecondary,
-            cursor: "pointer", fontSize: 14,
+            borderRadius: "50%", width: 36, height: 36, color: T.textSecondary,
+            cursor: "pointer", fontSize: 18, fontFamily: T.fontFamily,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            flexShrink: 0,
           }}>×</button>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
-            <div>
-              <div style={{ ...C.label }}>Valor do aporte</div>
-              <InputMoeda initValue={valor} onCommit={setValor} size="lg" />
-            </div>
-            <div>
-              <div style={{ ...C.label }}>Data</div>
-              <InputDate initValue={data} onCommit={setData} />
+        <div style={{ padding: "26px 32px 28px", display: "flex", flexDirection: "column", gap: 22 }}>
+          {/* Bloco 1: Aporte (valor + data) */}
+          <div>
+            <SectionHeader>Aporte do mês</SectionHeader>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 14 }}>
+              <div>
+                <div style={{ ...C.label, fontSize: 11 }}>Valor</div>
+                <InputMoeda initValue={valor} onCommit={setValor} size="lg" />
+              </div>
+              <div>
+                <div style={{ ...C.label, fontSize: 11 }}>Data</div>
+                <InputDate initValue={data} onCommit={setData} />
+              </div>
             </div>
           </div>
 
+          {/* Bloco 2: Ativo na carteira (mesmo painel destacado em roxo) */}
           <div style={{
-            padding: "12px 14px",
+            padding: "20px 22px",
             background: "rgba(168,85,247,0.05)",
-            border: "0.5px solid rgba(168,85,247,0.18)",
-            borderRadius: T.radiusMd,
-            display: "flex", flexDirection: "column", gap: 12,
+            border: "0.5px solid rgba(168,85,247,0.20)",
+            borderRadius: T.radiusLg,
+            display: "flex", flexDirection: "column", gap: 14,
           }}>
-            <div style={{ fontSize: 10, color: "#c084fc", textTransform: "uppercase", letterSpacing: "0.14em", ...noSel }}>
-              Destino do aporte (opcional, mas recomendado)
-            </div>
+            <SectionHeader>Ativo na carteira</SectionHeader>
 
             <div>
-              <div style={{ ...C.label }}>Classe</div>
+              <div style={{ ...C.label, fontSize: 11 }}>Classe</div>
               <select
                 value={classe}
                 onChange={(e) => { setClasse(e.target.value); setSegmento(""); }}
@@ -3021,34 +3066,34 @@ function AporteModal({ onClose, onSave }) {
           </div>
 
           <div>
-            <div style={{ ...C.label }}>Observação (opcional)</div>
+            <div style={{ ...C.label, fontSize: 11 }}>Observação (opcional)</div>
             <InputTexto initValue={observacao} onCommit={setObservacao} placeholder="Ex: salário, 13º, venda de imóvel..." />
           </div>
 
           <div style={{
             padding: "10px 12px", background: "rgba(168,85,247,0.06)",
             border: "0.5px solid rgba(168,85,247,0.2)", borderRadius: T.radiusSm,
-            fontSize: 10, color: "#c084fc", lineHeight: 1.6, ...noSel,
+            fontSize: 11, color: "#c084fc", lineHeight: 1.6, ...noSel,
           }}>
-            💡 Se você preencher o destino, o ativo é criado automaticamente na carteira além de ficar registrado no histórico.
+            💡 Preencheu só o aporte? Entra como entrada de caixa no histórico. Preencheu o ativo também? Vira posição na carteira automaticamente.
           </div>
 
-          <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+          <div style={{ display: "flex", gap: 12, marginTop: 4 }}>
             <button onClick={onClose} style={{
-              flex: 1, padding: 12, background: "rgba(255,255,255,0.04)",
+              flex: 1, padding: "14px 16px", background: "rgba(255,255,255,0.04)",
               border: `0.5px solid ${T.border}`, borderRadius: T.radiusMd,
-              color: T.textSecondary, fontSize: 11, cursor: "pointer",
-              fontFamily: T.fontFamily, letterSpacing: "0.12em", textTransform: "uppercase",
+              color: T.textSecondary, fontSize: 12, cursor: "pointer",
+              fontFamily: T.fontFamily, letterSpacing: "0.16em", textTransform: "uppercase",
             }}>Cancelar</button>
             <button onClick={() => onSave({ valor, data, observacao, classe, ativo, segmento, objetivo, vencimento })} style={{
-              flex: 1.5, padding: 12,
-              background: "rgba(168,85,247,0.15)",
-              border: "0.5px solid rgba(168,85,247,0.4)",
+              flex: 1.6, padding: "14px 16px",
+              background: "rgba(168,85,247,0.18)",
+              border: "1px solid rgba(168,85,247,0.45)",
               borderRadius: T.radiusMd,
-              color: "#c084fc", fontSize: 11, cursor: "pointer",
-              fontFamily: T.fontFamily, letterSpacing: "0.12em", textTransform: "uppercase",
+              color: "#c084fc", fontSize: 12, cursor: "pointer",
+              fontFamily: T.fontFamily, letterSpacing: "0.16em", textTransform: "uppercase",
               fontWeight: 500,
-            }}>Registrar aporte</button>
+            }}>Salvar</button>
           </div>
         </div>
       </div>

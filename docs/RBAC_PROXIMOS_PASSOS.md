@@ -1,6 +1,6 @@
 # RBAC — Próximos passos para ativar
 
-O frontend está pronto (deploy feito em `https://william-porto.web.app`).
+O frontend está pronto (deploy feito em `https://porto-invest.web.app` — domínio antigo `william-porto.web.app` continua redirecionando).
 Falta **3 ações** do lado do Firebase Console para ativar tudo.
 
 ---
@@ -32,7 +32,7 @@ Vai demorar uns 3–5 min na primeira vez (criando as APIs).
 
 **Como testar que funcionou:**
 
-1. Entre em `https://william-porto.web.app` logado como master (william).
+1. Entre em `https://porto-invest.web.app` logado como master (william).
 2. Clique em **Administrador** na sidebar (novo item).
 3. Preencha nome + email e clique em **Criar assessor**.
 4. Se aparecer "Assessor criado · senha inicial: assessorwilliamporto" → tudo certo.
@@ -48,7 +48,7 @@ Os clientes atuais não têm o campo `advisorId` preenchido. Sem ele:
 - Master continua vendo tudo (não filtra).
 - Assessor vê 0 clientes.
 
-**Atalho pronto no projeto**: abra `https://william-porto.web.app/dev/seed` logado como master
+**Atalho pronto no projeto**: abra `https://porto-invest.web.app/dev/seed` logado como master
 e clique em **"3. Migrar clientes existentes para o Master"** (usa writeBatch, atômico).
 
 Depois, os clientes que você quiser passar pra um assessor específico podem ser reatribuídos

@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { doc, getDoc } from "firebase/firestore";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { db } from "../firebase";
 import { Navbar } from "../components/Navbar";
 import { Sidebar } from "../components/Sidebar";
@@ -30,6 +31,16 @@ const CLASSES_TABS = [
 
 export default function Mercado() {
   const { isMaster, isCliente, profile } = useAuth();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+
+  // Quando o assessor clica em "Atualização de mercado" no menu lateral DENTRO
+  // do contexto de um cliente, o link traz `?cliente=<id>` — pra preservar a
+  // sidebar do cliente (e o botão "Voltar ao painel"). Sem esse param, o
+  // assessor cai no modo admin normal.
+  const clienteContextoId = searchParams.get("cliente");
+  const sidebarMode = isCliente || clienteContextoId ? "cliente" : "admin";
+  const sidebarClienteId = isCliente ? profile?.clienteId : clienteContextoId;
 
   const [loading, setLoading]           = useState(true);
   const [atualizando, setAtualizando]   = useState(false);
@@ -230,11 +241,22 @@ export default function Mercado() {
   return (
     <div className="dashboard-container has-sidebar">
       <Sidebar
-        mode={isCliente ? "cliente" : "admin"}
-        clienteId={isCliente ? profile?.clienteId : null}
+        mode={sidebarMode}
+        clienteId={sidebarClienteId}
         clienteNome={isCliente ? profile?.nome : null}
       />
-      <Navbar showLogout={true} />
+      <Navbar
+        showLogout={true}
+        actionButtons={!isCliente && clienteContextoId ? [
+          {
+            icon: "←",
+            label: "Voltar ao painel",
+            variant: "secondary",
+            onClick: () => navigate(`/cliente/${clienteContextoId}/painel`),
+            title: "Voltar ao painel do cliente",
+          },
+        ] : []}
+      />
 
       <div className="dashboard-content with-sidebar mercado-wrapper">
 

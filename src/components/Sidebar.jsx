@@ -301,12 +301,12 @@ function buildMenuCliente(id) {
     { id: "carteira",   label: "Minha carteira",          icon: "wallet",    path: `/cliente/${id}/carteira` },
     { id: "fluxo",      label: "Receitas e gastos",       icon: "dollar",    path: `/cliente/${id}/fluxo` },
     { id: "extrato",    label: "Extrato",                 icon: "extrato",   path: `/cliente/${id}/extrato` },
-    { id: "mercado",    label: "Atualização de mercado",  icon: "trending",  path: "/mercado" },
+    { id: "mercado",    label: "Atualização de mercado",  icon: "trending",  path: `/mercado?cliente=${id}` },
     { id: "comparacao", label: "Comparação de carteira",  icon: "chart",     path: `/cliente/${id}/ajustes` },
     { id: "diag",       label: "Diagnóstico da sua vida", icon: "compass",   path: `/cliente/${id}/diagnostico` },
     { id: "simul",      label: "Simulador",               icon: "simulate",  path: `/cliente/${id}/simulador` },
     { id: "editar",     label: "Editar perfil",           icon: "users",     path: `/cliente/${id}?edit=1` },
-    { id: "senha",      label: "Trocar senha",            icon: "lock",      path: "/reset-password" },
+    { id: "senha",      label: "Trocar senha",            icon: "lock",      path: `/reset-password?cliente=${id}` },
     { id: "voltar",     label: "Voltar aos clientes",     icon: "arrowLeft", path: "/dashboard" },
   ];
 }
@@ -496,17 +496,29 @@ export function Sidebar({ mode = "admin", clienteId = null, clienteNome = null }
       const ip = item.path || "";
       if (!ip) continue;
       const ipPath = ip.split("?")[0].split("#")[0];
+      const ipSearch = ip.includes("?") ? "?" + ip.split("?")[1].split("#")[0] : "";
       let score = 0;
-      if (ipPath === path) score += 2;
-      else if (path.startsWith(ipPath) && ipPath !== "/dashboard") score += 1;
-      // peso extra quando query/hash combinam
-      if (ip.includes("?") || ip.includes("#")) {
-        if (full.includes(ip.replace(/^[^?#]*/, ""))) score += 3;
+      if (ipPath === path) {
+        // Match exato de path: prioriza items com query/hash que TAMBÉM batem.
+        // Peso maior pra item que tem query e ela combina com a URL atual.
+        if (ipSearch && full.includes(ipSearch)) score += 6;
+        else if (!ipSearch) score += 4;
+        else score += 1; // path bate mas query do item NÃO bate → fraco
+      } else if (path.startsWith(ipPath + "/") && ipPath !== "/dashboard" && ipPath !== "/") {
+        // startsWith só conta como sub-rota REAL (com / após), nunca prefixo casual.
+        score += 2;
       }
       if (score > bestScore) { bestScore = score; bestId = item.id; }
     }
-    // fallback no modo admin: se o usuário está no /dashboard puro, "home" é ativo
-    if (bestScore <= 0 && mode !== "cliente" && path === "/dashboard") bestId = "home";
+    // Fallbacks por contexto — garantem que sempre há um item destacado:
+    if (bestScore <= 0) {
+      if (mode === "cliente") {
+        // Em qualquer rota cliente sem match óbvio, "Início" (visao) é o âncora.
+        if (menu.some((m) => m.id === "visao")) bestId = "visao";
+      } else if (path === "/dashboard") {
+        bestId = "home";
+      }
+    }
     return bestId;
   }, [menu, location, mode]);
 
@@ -586,6 +598,7 @@ export function Sidebar({ mode = "admin", clienteId = null, clienteNome = null }
                   className="sidebar-item-head"
                   onClick={() => onItemClick(item)}
                   title={item.label}
+                  aria-current={active ? "page" : undefined}
                 >
                   <span className="sidebar-icon">{ICONS[item.icon]}</span>
                   <span className="sidebar-label">{item.label}</span>
