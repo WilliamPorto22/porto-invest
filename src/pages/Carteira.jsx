@@ -424,6 +424,10 @@ export default function Carteira() {
   useEffect(() => {
     let alive = true;
     (async () => {
+      // Refresh do ID token uma vez por carregamento — fixa permission-denied
+      // em sessões antigas que ainda têm token sem custom claim role/email.
+      try { await auth.currentUser?.getIdToken(true); } catch { /* segue */ }
+
       if (clienteDoc && id) {
         const ano = new Date().getFullYear();
         const mes = String(new Date().getMonth() + 1).padStart(2, "0");
@@ -440,6 +444,17 @@ export default function Carteira() {
         if (alive) setSnapshots(lista || []);
       } catch (e) {
         console.warn("[Carteira] Falha ao listar snapshots:", e?.code);
+        // Retry uma vez após pequeno delay — o token recém-refreshed às vezes
+        // demora alguns ms pra propagar nas rules.
+        if (e?.code === "permission-denied") {
+          await new Promise((r) => setTimeout(r, 800));
+          try {
+            const lista2 = await listarSnapshots(id);
+            if (alive) setSnapshots(lista2 || []);
+          } catch (e2) {
+            console.warn("[Carteira] Retry também falhou:", e2?.code);
+          }
+        }
       }
     })();
     return () => { alive = false; };
@@ -870,18 +885,38 @@ export default function Carteira() {
 
       if (isImage) {
         // Imagens: usa Cloud Function (Claude Vision) — mais preciso e suporta carteiras em USD
-        setP(8, "Buscando cotação do dólar...");
-        let cotacaoDolar = 5.75;
+        setP(8, "Lendo cotação real do dólar...");
+        // Fonte da verdade: o mesmo serviço que alimenta o card de mercado
+        // do Dashboard (cotacoesReais.js → AwesomeAPI). Lê primeiro do cache
+        // do hub (localStorage["wealthtrack_cotacoes"]); se cache stale ou
+        // ausente, busca ao vivo. NÃO usa fallback chumbado — preferimos
+        // abortar e avisar o usuário a inventar uma taxa.
+        let cotacaoDolar = null;
         try {
-          // Timeout de 5s: se a API externa demorar, cai no fallback (5.75)
-          // em vez de travar o upload aguardando indefinidamente.
-          const fx = await fetch("https://economia.awesomeapi.com.br/json/last/USD-BRL", {
-            signal: AbortSignal.timeout(5000),
-          });
-          const fxJson = await fx.json();
-          const bid = parseFloat(fxJson?.USDBRL?.bid);
-          if (bid > 0) cotacaoDolar = bid;
-        } catch { /* usa fallback */ }
+          const cached = localStorage.getItem("wealthtrack_cotacoes");
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            const v = parseFloat(parsed?.dolar?.valor);
+            const tipo = String(parsed?.dolar?.tipo || "");
+            // Só aceita cache se NÃO for o fallback de 5,08 marcado como "Fallback"
+            if (v > 0 && tipo !== "Fallback") cotacaoDolar = v;
+          }
+        } catch { /* cache corrompido — segue pra busca ao vivo */ }
+        if (!cotacaoDolar) {
+          try {
+            const { obterTodasAsCotacoes } = await import("../services/cotacoesReais");
+            const cot = await obterTodasAsCotacoes({ force: true });
+            const v = parseFloat(cot?.dolar?.valor);
+            const tipo = String(cot?.dolar?.tipo || "");
+            if (v > 0 && tipo !== "Fallback") cotacaoDolar = v;
+          } catch { /* ignora — vai dar throw abaixo */ }
+        }
+        if (!cotacaoDolar) {
+          throw new Error(
+            "Não foi possível obter a cotação real do dólar agora. " +
+            "Abra a página de Mercado/Dashboard pra atualizar a cotação e tente novamente."
+          );
+        }
 
         setP(20, "Processando imagem com IA...");
         const base64 = await new Promise((res, rej) => {
@@ -891,13 +926,75 @@ export default function Carteira() {
           reader.readAsDataURL(file);
         });
 
-        const { httpsCallable } = await import("firebase/functions");
-        const { functions: fbFunctions } = await import("../firebase");
-        const callProcessar = httpsCallable(fbFunctions, "processarUploadCarteira", { timeout: 120000 });
-        const result = await callProcessar({ base64, fileType: file.type, clienteId: id, cotacaoDolar });
-        if (!result.data?.success) throw new Error("Falha ao processar imagem via IA.");
-        // Cloud Function retorna formato {classes, ativos, patrimonioTotal...} — passa direto
-        dados = result.data.dados;
+        // ── Estratégia em camadas para extração de imagem ───────────────
+        // 1) Cloud Function (Gemini grátis ou Anthropic) — qualidade máxima
+        // 2) Fallback OCR client-side (Tesseract.js) — quando IA cai por
+        //    falta de créditos, falta de chave ou indisponibilidade.
+        // Ambos os caminhos terminam com `dados` no mesmo formato esperado.
+        let dadosIA = null;
+        let erroIA = null;
+        try {
+          const { httpsCallable } = await import("firebase/functions");
+          const { functions: fbFunctions } = await import("../firebase");
+          const callProcessar = httpsCallable(fbFunctions, "processarUploadCarteira", { timeout: 120000 });
+          const result = await callProcessar({ base64, fileType: file.type, clienteId: id, cotacaoDolar });
+          if (result.data?.success) {
+            dadosIA = result.data.dados;
+            const provedor = result.data.provedor || "ia";
+            console.info(`[Carteira] Imagem extraída via ${provedor}`);
+          }
+        } catch (errIA) {
+          erroIA = errIA;
+          console.warn("[Carteira] IA falhou, tentando OCR local:", errIA?.message);
+        }
+
+        if (dadosIA) {
+          dados = dadosIA;
+        } else {
+          // Fallback: OCR local com Tesseract.js — funciona offline, sem custo.
+          // Qualidade menor que a IA mas serve quando os créditos zeram.
+          setP(40, "IA indisponível — usando OCR local (Tesseract)...");
+          try {
+            const { extractText, parseCarteiraFromText } = await import("../utils/documentParser");
+            const text = await extractText(file, (pct, message) => setP(40 + Math.round(pct * 0.5), message));
+            dados = parseCarteiraFromText(text);
+            // Marca o resultado pra UI saber que foi OCR (qualidade menor)
+            if (dados) {
+              dados._fonteFallback = "tesseract";
+              dados._erroIA = erroIA?.message || "IA indisponível";
+            }
+            // Converte USD → BRL se a cotação foi obtida e o texto tem indícios de USD.
+            const ehUSD = /USD|US\$|U\$|D.LAR/i.test(text);
+            if (ehUSD && cotacaoDolar > 0 && dados) {
+              // Multiplica os totais de classe e ativos pela cotação
+              ["posFixado","preFixado","ipca","acoes","fiis","multi","prevVGBL","prevPGBL",
+               "globalEquities","globalTreasury","globalFunds","globalBonds","global","outros"]
+                .forEach((k) => {
+                  const v = dados[k];
+                  if (typeof v === "string" && v.match(/^\d+$/)) {
+                    const cents = parseInt(v, 10);
+                    dados[k] = String(Math.round(cents * cotacaoDolar));
+                  }
+                  const lista = dados[k + "Ativos"];
+                  if (Array.isArray(lista)) {
+                    dados[k + "Ativos"] = lista.map((a) => {
+                      if (typeof a.valor === "string" && a.valor.match(/^\d+$/)) {
+                        return { ...a, valor: String(Math.round(parseInt(a.valor, 10) * cotacaoDolar)) };
+                      }
+                      return a;
+                    });
+                  }
+                });
+              dados._cotacaoUsadaUSD = cotacaoDolar;
+            }
+          } catch (errOcr) {
+            throw new Error(
+              "Não foi possível extrair dados da imagem. " +
+              `IA: ${erroIA?.message || "indisponível"}. ` +
+              `OCR local: ${errOcr?.message || "falhou"}.`
+            );
+          }
+        }
       } else {
         const { extractText, parseCarteiraFromText } = await import("../utils/documentParser");
         const text = await extractText(file, (pct, message) => setP(pct, message));
@@ -928,6 +1025,11 @@ export default function Carteira() {
     if (!importPend) return;
     setImportSalvando(true);
     try {
+      // Refresh do ID token: garante que custom claims (role) e email
+      // estejam atualizados antes de bater nas rules. Sessões antigas
+      // podem ter token sem claim/email → permission-denied no subcollection.
+      try { await auth.currentUser?.getIdToken(true); } catch { /* segue */ }
+
       const { dados, fonte, arquivoNome } = importPend;
 
       // 1) Popula o form da carteira com classes e ativos detectados.
@@ -935,6 +1037,44 @@ export default function Carteira() {
       //    pra novos com o mesmo nome — assim a flag de objetivo persiste
       //    de mês a mês até o ativo sair da carteira.
       const carteiraFields = Object.fromEntries(Object.entries(dados).filter(([k]) => !k.startsWith("_")));
+
+      // ── Normalização do formato Cloud Function (imagens) ──
+      // A CF retorna { classes: {posFixado: X, globalEquities: Y, ...},
+      //                ativos: [{nome, classe, valor, ...}, ...] }.
+      // O form da carteira persiste no formato {<classe>: "centavos",
+      //                                          <classe>Ativos: [{nome, valor: "centavos", ...}]}.
+      // Converte aqui pra que carteira viva, donut e tabelas atualizem
+      // imediatamente após import de imagem (e não só o snapshot).
+      if (carteiraFields.classes && typeof carteiraFields.classes === "object") {
+        Object.entries(carteiraFields.classes).forEach(([classKey, totalReais]) => {
+          const reais = Number(totalReais) || 0;
+          if (reais > 0) {
+            carteiraFields[classKey] = String(Math.round(reais * 100));
+          }
+        });
+        delete carteiraFields.classes;
+      }
+      if (Array.isArray(carteiraFields.ativos) && carteiraFields.ativos.length > 0) {
+        const porClasse = {};
+        carteiraFields.ativos.forEach((a) => {
+          const classKey = a.classe || "outros";
+          const valorReais = Number(a.valor) || 0;
+          if (valorReais <= 0) return;
+          if (!porClasse[classKey]) porClasse[classKey] = [];
+          porClasse[classKey].push({
+            id: `imp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+            nome: a.nome || "Ativo",
+            valor: String(Math.round(valorReais * 100)),
+            rentMes: a.rentMes != null ? String(a.rentMes) : "",
+            rentAno: a.rentAno != null ? String(a.rentAno) : "",
+            vencimento: a.vencimento || "",
+          });
+        });
+        Object.entries(porClasse).forEach(([classKey, lista]) => {
+          carteiraFields[classKey + "Ativos"] = lista;
+        });
+        delete carteiraFields.ativos;
+      }
       CLASSES.forEach((c) => {
         const ativosKey = c.key + "Ativos";
         const novosAtivos = carteiraFields[ativosKey];
@@ -967,11 +1107,18 @@ export default function Carteira() {
       const snapshot = normalizarDadosParaSnapshot(dados, novoForm, mesRef);
       if (!snapshot.mesRef) snapshot.mesRef = mesRef;
 
-      // Diff com o snapshot anterior (mês anterior) para detectar compras/vendas
+      // Diff com o snapshot anterior (mês anterior) para detectar compras/vendas.
+      // try/catch defensivo: se rules negarem leitura da subcoleção (token velho
+      // sem claim/email), seguimos sem o diff — o save vai pelo fallback CF.
       const mesAnt = mesAnterior(mesRef);
-      const snapAnt = mesAnt ? await obterSnapshot(id, mesAnt) : null;
-      // Também compara com o próprio mês (em caso de re-upload) pra ver o que mudou
-      const snapMesmoMes = await obterSnapshot(id, mesRef);
+      let snapAnt = null;
+      let snapMesmoMes = null;
+      try {
+        if (mesAnt) snapAnt = await obterSnapshot(id, mesAnt);
+        snapMesmoMes = await obterSnapshot(id, mesRef);
+      } catch (errLeitura) {
+        console.warn("[Carteira] Falha ao ler snapshots para diff (seguindo sem diff):", errLeitura?.code);
+      }
       const movDiff = [
         ...diffSnapshots(snapAnt, snapshot),
         ...(snapMesmoMes ? diffSnapshots(snapMesmoMes, snapshot).map((m) => ({ ...m, origem: "reupload" })) : []),
@@ -1205,25 +1352,28 @@ export default function Carteira() {
       setImportPend(null);
       setMsg(`✓ ${formatarMesRef(mesRef)} salvo. ${movDiff.length} movimento${movDiff.length === 1 ? "" : "s"} detectado${movDiff.length === 1 ? "" : "s"}.`);
       setTimeout(() => setMsg(""), 6000);
+      // Recarrega o histórico mensal pra a "Evolução da Carteira" refletir o
+      // novo snapshot imediatamente, sem precisar F5.
+      setRecarregarSnaps((k) => k + 1);
     } catch (err) {
       // Diagnóstico expandido: log ctx completo pra debug em campo.
-      // O catch do importação cobre erros de salvarSnapshotMensal,
-      // lerClienteComFallback, ou setDoc(cliente). Dump de tudo que
-      // pode ter relevância pra rules (auth uid, email, advisorId).
       console.error("[Carteira] Erro ao salvar importação:", {
         code: err?.code,
         message: err?.message,
         clienteId: id,
         authUid: auth.currentUser?.uid,
         authEmail: auth.currentUser?.email,
-        // Stack pode dar dica de qual etapa falhou (salvarSnapshotMensal, setDoc, etc.)
         stack: err?.stack?.split("\n").slice(0, 4).join(" | "),
         err,
       });
-      const msgErro = err?.code === "permission-denied"
-        ? "Sem permissão para salvar este cliente. Causa provável: sessão expirada (faça logout/login) ou advisorId do cliente não bate com sua conta. Veja o console (F12) pra detalhes."
+      const isPermDenied = err?.code === "permission-denied" || err?.code === "functions/permission-denied";
+      const msgErro = isPermDenied
+        ? "Sem permissão para salvar este cliente. Tente novamente — se persistir, faça logout/login para renovar a sessão."
         : "Erro ao salvar: " + (err?.message || "erro desconhecido");
       setMsg(msgErro);
+      // Fecha o modal mesmo em erro pra não travar a UI — o usuário lê o toast e refaz.
+      setImportPend(null);
+      setTimeout(() => setMsg(""), 8000);
     } finally {
       setImportSalvando(false);
     }
@@ -1309,11 +1459,6 @@ export default function Carteira() {
         showLogout={true}
         actionButtons={[
           { icon: "←", label: "Voltar", variant: "secondary", onClick: () => (window.history.length > 1 ? navigate(-1) : navigate(`/cliente/${id}`)), title: "Voltar" },
-          { icon: "↑", label: "Importar", onClick: () => fileInputRef.current?.click(), disabled: !!uploadProgress && !uploadProgress.error && uploadProgress.pct < 100 },
-          { icon: "＋", label: "Adicionar", variant: "secondary", onClick: () => setAporteModal(true), title: "Adicionar ativo ou aporte na carteira" },
-          isEditing
-            ? { icon: "💾", label: salvando ? "Salvando..." : "Salvar", variant: "primary", onClick: salvar, disabled: salvando }
-            : { icon: "✎", label: "Editar", variant: "primary", onClick: () => setIsEditing(true) },
         ]}
       />
       <input ref={fileInputRef} type="file" accept=".pdf,.png,.jpg,.jpeg,.webp" style={{ display: "none" }} onChange={handleUpload} />
@@ -1540,6 +1685,114 @@ export default function Carteira() {
               </div>
             );
           })()}
+        </div>
+
+        {/* ── BARRA DE AÇÕES (Importar / Adicionar / Editar) ── */}
+        <div style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          alignItems: "center",
+          gap: 10,
+          flexWrap: "wrap",
+          marginTop: 30,
+          marginBottom: 4,
+        }}>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={!!uploadProgress && !uploadProgress.error && uploadProgress.pct < 100}
+            style={{
+              padding: "10px 18px",
+              background: "none",
+              border: `0.5px solid ${T.border}`,
+              borderRadius: T.radiusMd,
+              fontSize: 11,
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+              color: T.textSecondary,
+              cursor: "pointer",
+              fontFamily: T.fontFamily,
+              transition: "all 0.25s ease",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+            }}
+            title="Importar carteira via PDF/imagem"
+          >
+            <span style={{ fontSize: 13 }}>↑</span> Importar
+          </button>
+
+          <button
+            onClick={() => setAporteModal(true)}
+            style={{
+              padding: "10px 18px",
+              background: "none",
+              border: `0.5px solid ${T.border}`,
+              borderRadius: T.radiusMd,
+              fontSize: 11,
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+              color: T.textSecondary,
+              cursor: "pointer",
+              fontFamily: T.fontFamily,
+              transition: "all 0.25s ease",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+            }}
+            title="Adicionar ativo ou aporte na carteira"
+          >
+            <span style={{ fontSize: 13 }}>＋</span> Adicionar
+          </button>
+
+          {isEditing ? (
+            <button
+              onClick={salvar}
+              disabled={salvando}
+              style={{
+                padding: "10px 18px",
+                background: T.goldDim,
+                border: `1px solid ${T.goldBorder}`,
+                borderRadius: T.radiusMd,
+                fontSize: 11,
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                color: T.gold,
+                cursor: salvando ? "not-allowed" : "pointer",
+                fontFamily: T.fontFamily,
+                fontWeight: 500,
+                transition: "all 0.25s ease",
+                opacity: salvando ? 0.6 : 1,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
+              <span style={{ fontSize: 13 }}>💾</span> {salvando ? "Salvando..." : "Salvar"}
+            </button>
+          ) : (
+            <button
+              onClick={() => setIsEditing(true)}
+              style={{
+                padding: "10px 18px",
+                background: T.goldDim,
+                border: `1px solid ${T.goldBorder}`,
+                borderRadius: T.radiusMd,
+                fontSize: 11,
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                color: T.gold,
+                cursor: "pointer",
+                fontFamily: T.fontFamily,
+                fontWeight: 500,
+                transition: "all 0.25s ease",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
+              <span style={{ fontSize: 13 }}>✎</span> Editar
+            </button>
+          )}
         </div>
 
         {/* Feedback */}

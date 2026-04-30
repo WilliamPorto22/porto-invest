@@ -28,7 +28,7 @@ async function getWorker(onLog) {
 }
 async function terminateWorker() {
   if (_tesseractWorker) {
-    try { await _tesseractWorker.terminate(); } catch {}
+    try { await _tesseractWorker.terminate(); } catch { /* ignore */ }
     _tesseractWorker = null;
   }
 }
@@ -140,8 +140,8 @@ async function _fromPDF(file, onProgress) {
     return text;
   } finally {
     // Destrói o documento pdf.js para liberar toda memória mantida
-    try { await pdf.cleanup(); } catch {}
-    try { await pdf.destroy(); } catch {}
+    try { await pdf.cleanup(); } catch { /* ignore */ }
+    try { await pdf.destroy(); } catch { /* ignore */ }
   }
 }
 
@@ -421,7 +421,7 @@ function parseRelatorio(text) {
     // Funciona no texto normalizado (sem acentos).
     // Aceita prefixo "99,98% " que o pdfjs/pdfplumber inclui do gráfico "Total investido"
     const compM = nt_line.match(
-      /^(?:\d{1,3}[\d,]*%\s+)?([A-Z][A-Z\s\/\-\.]{2,40}?)\s+\(?(\d[\d,]+)%\)?\s+R\$\s*([\d.]+,\d{2})/
+      /^(?:\d{1,3}[\d,]*%\s+)?([A-Z][A-Z\s/\-.]{2,40}?)\s+\(?(\d[\d,]+)%\)?\s+R\$\s*([\d.]+,\d{2})/
     );
     if (compM) {
       const key = classNameToKey(compM[1]);
@@ -439,7 +439,7 @@ function parseRelatorio(text) {
     // ── Detectar linha de classe na Posição Detalhada: "ClassName R$ VALUE -" ─
     // Aceita tanto "VALUE - 17%" quanto "VALUE -17%" (sem espaço após traço)
     const classHdrM = nt_line.match(
-      /^([A-Z][A-Z\s\/\-\.]{2,40}?)\s+R\$\s*([\d.]+,\d{2})\s+[-–]/
+      /^([A-Z][A-Z\s/\-.]{2,40}?)\s+R\$\s*([\d.]+,\d{2})\s+[-–]/
     );
     if (classHdrM) {
       const key = classNameToKey(classHdrM[1]);
@@ -504,7 +504,7 @@ function parseRelatorio(text) {
       // 3. Remove " -" solto no final (carry residual)
       const nome = nomeRaw
         .replace(/^(?:IPC[-\s]*A|IPCA)\s*\+\s*[\d,]+%\s+/i, "")
-        .replace(/\s*[-–]\s*(?:(?:IPC[-\s]*A|IPCA)\s*\+\s*)?[\d,]+%[\w\s%+\-]*$/i, "")
+        .replace(/\s*[-–]\s*(?:(?:IPC[-\s]*A|IPCA)\s*\+\s*)?[\d,]+%[\w\s%+-]*$/i, "")
         .replace(/\s*[-–]\s*$/, "")
         .trim();
 
@@ -1157,10 +1157,11 @@ const CART_PATTERNS = {
   multi:     [/MULTIMERCADO/i,/HEDGE\s*FUND/i],
   prevVGBL:  [/VGBL/i],
   prevPGBL:  [/PGBL/i],
-  globalEquities: [/EQUIT(?:IES|Y)\b/i,/BDR\b/i,/ADR\b/i],
-  globalTreasury: [/TREASURY/i,/TESOURO\s+AMERICANO/i],
-  globalBonds:    [/BONDS?\b/i],
-  global:         [/GLOBAL\b/i,/INTERNACIONAL\b/i,/EXTERIOR\b/i,/DOLAR|D.LAR\b/i,/USD\b/i],
+  globalEquities: [/EQUIT(?:IES|Y)\b/i,/BDR\b/i,/ADR\b/i,/RENDA\s+VARI.VEL\b.*GLOBAL/i],
+  globalTreasury: [/TREASURY/i,/TESOURO\s+AMERICANO/i,/T-BILL|T-NOTE|T-BOND/i],
+  globalFunds:    [/MUTUAL\s+FUNDS?/i,/FUNDOS?\s+INTERNACIONAIS?/i,/FUNDOS?\s+GLOBAIS?/i],
+  globalBonds:    [/BONDS?\b/i,/CORPORATE\s+BONDS?/i],
+  global:         [/GLOBAL\b/i,/INTERNACIONAL\b/i,/EXTERIOR\b/i,/DOLAR|D.LAR\b/i,/USD\b/i,/CASH\s+SALDO/i],
 };
 
 function _parseCarteiraGenerico(text) {
@@ -1199,7 +1200,11 @@ function classifyAtivo(name, contextBefore) {
   if (/MULTIMERCADO|HEDGE/.test(ctx)) return "multi";
   if (/\bVGBL\b/.test(ctx)) return "prevVGBL";
   if (/\bPGBL\b/.test(ctx)) return "prevPGBL";
-  if (/GLOBAL|INTERNACIONAL|EXTERIOR|D.LAR|\bUSD\b/.test(ctx)) return "global";
+  if (/MUTUAL\s+FUNDS?|FUNDOS?\s+(INTERNACIONAIS?|GLOBAIS?)/.test(ctx)) return "globalFunds";
+  if (/EQUIT(?:IES|Y)|BDR|ADR/.test(ctx)) return "globalEquities";
+  if (/TREASURY|TESOURO\s+AMERICANO|T-BILL|T-NOTE|T-BOND/.test(ctx)) return "globalTreasury";
+  if (/BONDS?\b|CORPORATE\s+BONDS?/.test(ctx)) return "globalBonds";
+  if (/GLOBAL|INTERNACIONAL|EXTERIOR|D.LAR|\bUSD\b|CASH\s+SALDO/.test(ctx)) return "global";
   return "outros";
 }
 
@@ -1224,7 +1229,7 @@ function _parseAtivosGenerico(text) {
 
   // Regex que casa qualquer "R$ X,XX" com tolerância a artefatos OCR
   // (RS, R S, espaços extras antes do dígito)
-  const VAL_RE = /R\s*[\$S5]\s*([\d]{1,3}(?:\.\d{3})*,\d{2})/;
+  const VAL_RE = /R\s*[$S5]\s*([\d]{1,3}(?:\.\d{3})*,\d{2})/;
   // Labels fortes que indicam o valor do ativo
   const VALOR_LABEL_RE = /(?:saldo\s+bruto|saldo\s+atual|saldo\s+l[ií]quido|valor(?:\s+investido)?|aplicado|posi[çc][ãa]o|total\s+investido|patrim[oôó]nio|valor\s+bruto)/i;
   // Lixo que nunca pode ser nome
@@ -1251,7 +1256,7 @@ function _parseAtivosGenerico(text) {
     // Prefere linhas com label conhecido; se não tem label e não é valor "isolado",
     // só aceita se a linha começa com R$ (ex: "R$ 712,80")
     const hasLabel = VALOR_LABEL_RE.test(t);
-    const isStandalone = /^R?\s*[\$S5]?\s*[\d]{1,3}(?:\.\d{3})*,\d{2}\s*$/.test(t);
+    const isStandalone = /^R?\s*[$S5]?\s*[\d]{1,3}(?:\.\d{3})*,\d{2}\s*$/.test(t);
     if (!hasLabel && !isStandalone) continue;
     // Se tem label "saldo líquido" e logo antes já vimos "saldo bruto" com mesmo bloco, pula (evita duplicar)
     // Detecta isso checando se alguma linha anterior (até 4) tem label bruto/atual
@@ -1416,7 +1421,7 @@ export function parseCarteiraFromText(text) {
   const genericoRes = _parseCarteiraGenerico(text);
   if (Object.keys(genericoRes).length > 0) return genericoRes;
   // Fallback 3: pegou pelo menos algum R$ no texto? cria um ativo em "outros"
-  const valM = text.match(/R\s*[\$S5]\s*([\d]{1,3}(?:\.\d{3})*,\d{2})/);
+  const valM = text.match(/R\s*[$S5]\s*([\d]{1,3}(?:\.\d{3})*,\d{2})/);
   if (valM) {
     const valor = parseBRL(valM[1]);
     if (valor >= 100) {

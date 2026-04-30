@@ -35,7 +35,8 @@ import {
   orderBy,
   limit,
 } from "firebase/firestore";
-import { db } from "../firebase";
+import { httpsCallable } from "firebase/functions";
+import { db, functions } from "../firebase";
 
 // ── Sanitizador deep: remove TODO valor undefined recursivamente ─
 // Firestore rejeita `undefined` em qualquer nível com o erro
@@ -189,8 +190,26 @@ export async function listarSnapshots(clienteId, opts = {}) {
   const q = opts.limite
     ? query(col, orderBy("mesRef", "desc"), limit(opts.limite))
     : query(col, orderBy("mesRef", "desc"));
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  try {
+    const snap = await getDocs(q);
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  } catch (err) {
+    // Fallback automático via Cloud Function (Admin SDK bypassa rules).
+    // Resolve o caso de master/assessor com token sem custom claim ou rules
+    // bloqueando list de subcoleção. Se a CF também falhar, propaga o erro.
+    if (err?.code === "permission-denied") {
+      console.warn("[snapshotsCarteira] list permission-denied — usando CF listarSnapshotsCliente");
+      try {
+        const callListar = httpsCallable(functions, "listarSnapshotsCliente", { timeout: 15000 });
+        const r = await callListar({ clienteId, limite: opts.limite || 50 });
+        return Array.isArray(r?.data?.snapshots) ? r.data.snapshots : [];
+      } catch (errCF) {
+        console.warn("[snapshotsCarteira] CF fallback também falhou:", errCF?.code);
+        throw err;
+      }
+    }
+    throw err;
+  }
 }
 
 export async function obterSnapshot(clienteId, mesRef) {
@@ -321,7 +340,12 @@ export function normalizarDadosParaSnapshot(dados, carteiraAtual, mesRef) {
   // posFixado, ipca, ... em string de centavos. Ativos em <classe>Ativos.
 
   const classes = {};
-  ["posFixado", "preFixado", "ipca", "acoes", "fiis", "multi", "prevVGBL", "prevPGBL", "global"].forEach((k) => {
+  [
+    "posFixado", "preFixado", "ipca", "acoes", "fiis", "multi",
+    "prevVGBL", "prevPGBL",
+    "globalEquities", "globalTreasury", "globalFunds", "globalBonds",
+    "global", "outros",
+  ].forEach((k) => {
     const v = dados[k] || carteiraAtual?.[k] || "0";
     const reais = Number(String(v).replace(/\D/g, "")) / 100;
     if (reais > 0) classes[k] = reais;

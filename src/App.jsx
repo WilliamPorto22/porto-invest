@@ -21,6 +21,7 @@ const FluxoMensal       = lazy(() => import("./pages/FluxoMensal"));
 const Diagnostico       = lazy(() => import("./pages/Diagnostico"));
 const Simulador         = lazy(() => import("./pages/Simulador"));
 const DevSeed           = lazy(() => import("./pages/DevSeed"));
+const DevImportarImagem = lazy(() => import("./pages/DevImportarImagem"));
 const Extrato           = lazy(() => import("./pages/Extrato"));
 const AjustesCarteira   = lazy(() => import("./pages/AjustesCarteira"));
 const AdminUsuarios     = lazy(() => import("./pages/AdminUsuarios"));
@@ -97,6 +98,7 @@ function App() {
 
           {/* Gating do Master fica dentro do próprio DevSeed (useAuth.isMaster). */}
           <Route path="/dev/seed" element={<Guard roles={[ROLES.MASTER]} element={<DevSeed />} />} />
+          <Route path="/dev/importar-imagem" element={<Guard roles={[ROLES.MASTER]} element={<DevImportarImagem />} />} />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

@@ -3,6 +3,7 @@ const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { defineSecret } = require('firebase-functions/params');
 const admin = require('firebase-admin');
 const Anthropic = require('@anthropic-ai/sdk').default;
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 const YahooFinance = require('yahoo-finance2').default;
 
 // yahoo-finance2 v3+ é uma classe — precisa instanciar uma vez.
@@ -18,12 +19,20 @@ admin.initializeApp();
 // declarar no config: { secrets: [ANTHROPIC_API_KEY] }. Em runtime,
 // process.env.ANTHROPIC_API_KEY ficará disponível só nessas funções.
 const ANTHROPIC_API_KEY = defineSecret('ANTHROPIC_API_KEY');
+// GEMINI_API_KEY (Google AI Studio) — gratuito até 1500 req/dia.
+// Usado como provedor primário pra leitura de imagem/PDF de carteira,
+// já que tem free tier generoso. Anthropic permanece como fallback opcional.
+const GEMINI_API_KEY = defineSecret('GEMINI_API_KEY');
 
-// IMPORTANTE: instanciamos o cliente Anthropic SOB DEMANDA dentro de cada
-// função (não no topo do módulo). Em Functions v2, secrets só estão
-// disponíveis no escopo de execução das funções que declaram `secrets:[...]`.
+// IMPORTANTE: instanciamos clientes SOB DEMANDA dentro de cada função
+// (não no topo do módulo). Em Functions v2, secrets só estão disponíveis
+// no escopo de execução das funções que declaram `secrets:[...]`.
 function getAnthropicClient() {
   return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+}
+function getGeminiClient() {
+  if (!process.env.GEMINI_API_KEY) return null;
+  return new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 }
 
 const MASTER_EMAIL = 'williamporto0@gmail.com';
@@ -97,7 +106,7 @@ function randomPassword(len = 14) {
 
 function buildPromptCarteira(cotacaoDolar) {
   const taxaInfo = cotacaoDolar
-    ? `\n\nCOTAÇÃO DO DÓLAR FORNECIDA: US$ 1 = R$ ${cotacaoDolar.toFixed(4)}\n\nSE O DOCUMENTO ESTIVER EM USD (dólares):\n- Multiplique cada valor em USD pela cotação acima e retorne TUDO EM REAIS (BRL).\n- O patrimonioTotal deve ser o valor total em USD × cotacao.\n- Mapeie as classes internacionais para "global":\n  * Mutual Funds → global\n  * Equities → global\n  * Cash → global\n  * Structured Notes → global\n  * Certificate of Deposit → global\n  * Treasury → global\n  * Bonds → global\n  * Qualquer outra classe em inglês → global`
+    ? `\n\nCOTAÇÃO DO DÓLAR FORNECIDA: US$ 1 = R$ ${cotacaoDolar.toFixed(4)}\n\nSE O DOCUMENTO ESTIVER EM USD (dólares):\n- Multiplique cada valor em USD pela cotação acima e retorne TUDO EM REAIS (BRL).\n- Cada ativo individual também deve ser convertido (valor em R$).\n- O patrimonioTotal deve ser o valor total em USD × cotacao.\n- Mapeie as classes internacionais com GRANULARIDADE (não joga tudo em "global"):\n  * Equities / Renda Variável (ações como VOO, AAPL, DE, etc.) → globalEquities\n  * Treasury / Tesouro Americano (T-Bills, T-Notes, T-Bonds) → globalTreasury\n  * Mutual Funds / Fundos (PIMCO, JP Morgan, Morgan Stanley etc.) → globalFunds\n  * Bonds / Renda Fixa Internacional (corporate bonds, sovereign bonds) → globalBonds\n  * Cash / Saldo / Dinheiro disponível → global\n  * Structured Notes / Certificate of Deposit / outros → global\n- O nome do ativo deve preservar o ticker (ex.: "VOO", "PIMXZ") + descrição quando houver (ex.: "VOO – Vanguard S&P 500 ETF").\n- Para ativos globais, popule rentMes com a coluna "Rent. %" do extrato (rentabilidade desde compra, em %).`
     : "";
 
   return `Você é um extrator especialista em relatórios de investimentos brasileiros (XP Investimentos, BTG, Itaú, Inter, NuInvest etc.).\n\nAnalise o documento e retorne UM JSON ÚNICO no formato abaixo. Nunca invente valores — se um campo não existir no documento, use null (ou 0 para somatórios).${taxaInfo}
@@ -130,6 +139,10 @@ FONTE PRIORITÁRIA DOS PERCENTUAIS (XP):
     "multi":           <total reais>,
     "prevVGBL":        <total reais>,
     "prevPGBL":        <total reais>,
+    "globalEquities":  <total reais>,
+    "globalTreasury":  <total reais>,
+    "globalFunds":     <total reais>,
+    "globalBonds":     <total reais>,
     "global":          <total reais>
   },
   "ativos": [                                    // lista de ativos individuais detectados
@@ -206,12 +219,66 @@ REGRAS DE CLASSIFICAÇÃO:
 - fiis: Fundos Imobiliários (tickers terminados em 11), papéis imobiliários
 - multi: Fundos multimercado, hedge funds, long-short
 - prevVGBL / prevPGBL: planos de previdência (pelo nome do plano)
-- global: ativos internacionais, BDRs, ETFs globais, Bonds, Treasury, fundos cambiais
+- globalEquities: ações internacionais e ETFs de ação (VOO, AAPL, MSFT, DE, BDRs, ADRs)
+- globalTreasury: títulos do tesouro americano (T-Bills, T-Notes, T-Bonds)
+- globalFunds: fundos mútuos internacionais (PIMCO, JP Morgan, Morgan Stanley, Goldman, etc.)
+- globalBonds: renda fixa corporativa internacional (corporate bonds, high yield bonds)
+- global: outros ativos internacionais não classificáveis acima (cash em USD, structured notes, CDs em USD, fundos cambiais brasileiros)
 
 Responda APENAS com o JSON. Não inclua \`\`\`json, explicação ou qualquer texto fora do objeto.`;
 }
 
-exports.processarUploadCarteira = onCall({ region: 'southamerica-east1', timeoutSeconds: 120, secrets: [ANTHROPIC_API_KEY] }, async (request) => {
+// ── Helpers de leitura de JSON do output da IA ─────────────────────────
+function extrairJSON(texto) {
+  const limpo = String(texto || '').replace(/```json|```/g, '').trim();
+  const first = limpo.indexOf('{');
+  const last = limpo.lastIndexOf('}');
+  const core = first >= 0 && last > first ? limpo.slice(first, last + 1) : limpo;
+  return JSON.parse(core);
+}
+
+// ── Provedor 1: Gemini (gratuito, primário) ────────────────────────────
+async function lerCarteiraComGemini(prompt, base64, fileType) {
+  const ai = getGeminiClient();
+  if (!ai) throw new Error('GEMINI_API_KEY não configurada');
+  // Gemini 2.0 Flash: free tier 15 RPM / 1500 RPD, suporta imagem e PDF.
+  const model = ai.getGenerativeModel({ model: 'gemini-2.0-flash' });
+  const result = await model.generateContent([
+    { text: prompt },
+    { inlineData: { mimeType: fileType, data: base64 } },
+  ]);
+  const texto = result.response.text();
+  return { extraido: extrairJSON(texto), provedor: 'gemini-2.0-flash' };
+}
+
+// ── Provedor 2: Anthropic (pago, fallback) ─────────────────────────────
+async function lerCarteiraComAnthropic(prompt, base64, fileType, isPDF) {
+  if (!process.env.ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY não configurada');
+  const message = await getAnthropicClient().messages.create({
+    model: 'claude-sonnet-4-5',
+    max_tokens: 4000,
+    messages: [{
+      role: 'user',
+      content: [
+        { type: isPDF ? 'document' : 'image', source: { type: 'base64', media_type: fileType, data: base64 } },
+        { type: 'text', text: prompt, cache_control: { type: 'ephemeral' } },
+      ],
+    }],
+  });
+  const texto = message.content.filter((b) => b.type === 'text').map((b) => b.text).join('');
+  return {
+    extraido: extrairJSON(texto),
+    provedor: 'claude-sonnet-4-5',
+    cache: {
+      created: message.usage?.cache_creation_input_tokens || 0,
+      read: message.usage?.cache_read_input_tokens || 0,
+    },
+  };
+}
+
+exports.processarUploadCarteira = onCall(
+  { region: 'southamerica-east1', timeoutSeconds: 120, secrets: [ANTHROPIC_API_KEY, GEMINI_API_KEY] },
+  async (request) => {
   const info = await getCallerRole(request);
 
   const { base64, fileType, clienteId, cotacaoDolar } = request.data;
@@ -223,7 +290,8 @@ exports.processarUploadCarteira = onCall({ region: 'southamerica-east1', timeout
     );
   }
 
-  // Verifica se o chamador tem acesso ao cliente — mesma lógica do lerCliente.
+  // RBAC: master vê tudo · assessor só seus próprios · cliente só o próprio doc.
+  // Mesma lógica do lerCliente — não restrito ao master.
   const cliSnap = await admin.firestore().doc(`clientes/${clienteId}`).get();
   if (!cliSnap.exists) {
     throw new HttpsError('not-found', 'Cliente não encontrado');
@@ -244,50 +312,44 @@ exports.processarUploadCarteira = onCall({ region: 'southamerica-east1', timeout
       throw new Error('Tipo de arquivo não suportado. Use PDF ou imagem.');
     }
 
-    const content = [
-      {
-        type: isPDF ? 'document' : 'image',
-        source: { type: 'base64', media_type: fileType, data: base64 },
-      },
-      {
-        type: 'text',
-        text: buildPromptCarteira(cotacaoDolar ? Number(cotacaoDolar) : null),
-        cache_control: { type: 'ephemeral' },
-      },
-    ];
+    const prompt = buildPromptCarteira(cotacaoDolar ? Number(cotacaoDolar) : null);
 
-    const message = await getAnthropicClient().messages.create({
-      model: 'claude-sonnet-4-5',
-      max_tokens: 4000,
-      messages: [{ role: 'user', content }],
-    });
+    // ── Estratégia: Gemini primeiro (gratuito), Anthropic como fallback ──
+    // Cada cliente tem ativos/quantidades diferentes — a IA é chamada
+    // sob demanda pra cada upload, então sempre extrai dados específicos
+    // do documento enviado.
+    let resultado = null;
+    const erros = [];
 
-    const texto = message.content
-      .filter((block) => block.type === 'text')
-      .map((block) => block.text)
-      .join('');
-
-    // Remove cercas ```json e qualquer texto extra antes/depois do JSON principal.
-    const limpo = texto.replace(/```json|```/g, '').trim();
-    const firstBrace = limpo.indexOf('{');
-    const lastBrace = limpo.lastIndexOf('}');
-    const jsonCore = firstBrace >= 0 && lastBrace > firstBrace
-      ? limpo.slice(firstBrace, lastBrace + 1)
-      : limpo;
-
-    let extraido;
-    try {
-      extraido = JSON.parse(jsonCore);
-    } catch (parseErr) {
-      console.error('JSON inválido retornado por Claude:', limpo.slice(0, 500));
-      throw new Error('Resposta do agente em formato inesperado: ' + parseErr.message);
+    if (process.env.GEMINI_API_KEY) {
+      try {
+        resultado = await lerCarteiraComGemini(prompt, base64, fileType);
+      } catch (e) {
+        console.warn('[processarUpload] Gemini falhou:', e?.message);
+        erros.push('Gemini: ' + (e?.message || 'erro'));
+      }
+    }
+    if (!resultado && process.env.ANTHROPIC_API_KEY) {
+      try {
+        resultado = await lerCarteiraComAnthropic(prompt, base64, fileType, isPDF);
+      } catch (e) {
+        console.warn('[processarUpload] Anthropic falhou:', e?.message);
+        erros.push('Anthropic: ' + (e?.message || 'erro'));
+      }
+    }
+    if (!resultado) {
+      throw new HttpsError(
+        'failed-precondition',
+        erros.length
+          ? 'Nenhum provedor de IA disponível. Detalhes: ' + erros.join(' | ')
+          : 'Nenhum provedor de IA configurado. Configure GEMINI_API_KEY (gratuito) ou ANTHROPIC_API_KEY no Secret Manager.'
+      );
     }
 
+    const extraido = resultado.extraido;
+
     // Heurística: PDF protegido por senha / scan ilegível / página em branco
-    // chega aqui como JSON com tudo zerado/null. O cliente só recebia
-    // "0 campos preenchidos" sem entender o motivo. Detecta no servidor e
-    // devolve mensagem específica pra o usuário saber que precisa enviar
-    // a versão sem senha.
+    // chega aqui como JSON com tudo zerado/null.
     const semPatrimonio = !extraido?.patrimonioTotal || Number(extraido.patrimonioTotal) === 0;
     const semClasses = !extraido?.classes || Object.values(extraido.classes || {}).every((v) => !v);
     const semAtivos = !Array.isArray(extraido?.ativos) || extraido.ativos.length === 0;
@@ -303,11 +365,9 @@ exports.processarUploadCarteira = onCall({ region: 'southamerica-east1', timeout
     return {
       success: true,
       dados: extraido,
+      provedor: resultado.provedor,
       timestamp: new Date().toISOString(),
-      cache: {
-        created: message.usage?.cache_creation_input_tokens || 0,
-        read: message.usage?.cache_read_input_tokens || 0,
-      },
+      cache: resultado.cache || null,
     };
   } catch (error) {
     console.error('Erro ao processar upload:', error);

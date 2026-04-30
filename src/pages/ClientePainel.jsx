@@ -3,7 +3,7 @@ import { useParams, useNavigate, Navigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { lerClienteComFallback } from "../services/lerClienteFallback";
 import { onSnapshot, doc } from "firebase/firestore";
-import { db } from "../firebase";
+import { db, auth } from "../firebase";
 import { Sidebar } from "../components/Sidebar";
 import { Navbar } from "../components/Navbar";
 import PainelClienteShared from "../components/cliente/PainelClienteShared";
@@ -78,9 +78,22 @@ export default function ClientePainel() {
   useEffect(() => {
     if (!clienteId) return;
     let alive = true;
-    listarSnapshots(clienteId)
-      .then((lista) => { if (alive) setSnapshots(lista || []); })
-      .catch(() => { /* sem snapshots */ });
+    (async () => {
+      // Refresh do token pra fixar permission-denied em sessões antigas
+      try { await auth.currentUser?.getIdToken(true); } catch { /* segue */ }
+      try {
+        const lista = await listarSnapshots(clienteId);
+        if (alive) setSnapshots(lista || []);
+      } catch (e) {
+        if (e?.code === "permission-denied") {
+          await new Promise((r) => setTimeout(r, 800));
+          try {
+            const lista2 = await listarSnapshots(clienteId);
+            if (alive) setSnapshots(lista2 || []);
+          } catch { /* desiste */ }
+        }
+      }
+    })();
     return () => { alive = false; };
   }, [clienteId, cliente]);
 
