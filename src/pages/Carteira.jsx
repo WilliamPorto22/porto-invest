@@ -258,6 +258,7 @@ export default function Carteira() {
   const [xpSummary, setXpSummary] = useState(null);
   // Extração finalizou — aguarda usuário confirmar mês antes de salvar
   const [importPend, setImportPend] = useState(null); // { dados, extractedAt, fonte, arquivoNome }
+  const [manualEntryOpen, setManualEntryOpen] = useState(false); // modal de entrada manual
   const [importSalvando, setImportSalvando] = useState(false);
 
   // drill-down e editor
@@ -1476,7 +1477,22 @@ export default function Carteira() {
         />
       )}
       {xpSummary && <RelatorioModal meta={xpSummary} onClose={() => setXpSummary(null)} />}
-      {uploadProgress && !importPend && <UploadOverlay progress={uploadProgress} onClose={() => setUploadProgress(null)} />}
+      {uploadProgress && !importPend && (
+        <UploadOverlay
+          progress={uploadProgress}
+          onClose={() => setUploadProgress(null)}
+          onAbrirManual={() => { setUploadProgress(null); setManualEntryOpen(true); }}
+        />
+      )}
+      {manualEntryOpen && (
+        <ManualEntryModal
+          onClose={() => setManualEntryOpen(false)}
+          onConfirm={(dados, mesRef) => {
+            setManualEntryOpen(false);
+            setImportPend({ dados, fonte: "manual", arquivoNome: `manual-${mesRef}` });
+          }}
+        />
+      )}
       {aporteModal && <AporteModal onClose={() => setAporteModal(false)} onSave={registrarAporte} />}
       {classePicker && (
         <ClassePickerModal
@@ -3583,6 +3599,247 @@ function MesVinculoModal({ dados, salvando, onConfirm, onCancel }) {
   );
 }
 
+// ══════════════════════════════════════════════════════════════
+// MODAL: Entrada manual de carteira
+// Fallback definitivo quando IA + OCR falham. Funciona pra qualquer
+// perfil (master/assessor/cliente). Usuário olha a imagem do extrato
+// e digita os ativos um a um. Suporta moeda BRL ou USD (com cotação
+// real do hub se for USD).
+// ══════════════════════════════════════════════════════════════
+function ManualEntryModal({ onClose, onConfirm }) {
+  const hoje = new Date();
+  const mesAtualRef = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}`;
+  const [mesRef, setMesRef] = useState(mesAtualRef);
+  const [moeda, setMoeda] = useState("BRL"); // BRL | USD
+  const [linhas, setLinhas] = useState([
+    { id: Date.now() + 1, nome: "", classe: "globalEquities", valor: "", rentMes: "" },
+  ]);
+
+  // Cotação USD do hub — só lida quando moeda=USD
+  const cotacaoUSD = (() => {
+    try {
+      const cached = localStorage.getItem("wealthtrack_cotacoes");
+      if (cached) {
+        const p = JSON.parse(cached);
+        const v = parseFloat(p?.dolar?.valor);
+        const tipo = String(p?.dolar?.tipo || "");
+        if (v > 0 && tipo !== "Fallback") return v;
+      }
+    } catch { /* ignore */ }
+    return null;
+  })();
+
+  function addLinha() {
+    setLinhas((arr) => [...arr, { id: Date.now() + Math.random(), nome: "", classe: "globalEquities", valor: "", rentMes: "" }]);
+  }
+  function removeLinha(id) {
+    setLinhas((arr) => arr.length > 1 ? arr.filter((l) => l.id !== id) : arr);
+  }
+  function updLinha(id, campo, val) {
+    setLinhas((arr) => arr.map((l) => l.id === id ? { ...l, [campo]: val } : l));
+  }
+
+  const linhasValidas = linhas.filter((l) => l.nome.trim() && parseFloat(l.valor) > 0);
+  const totalMoeda = linhasValidas.reduce((acc, l) => acc + (parseFloat(l.valor) || 0), 0);
+  const totalBRL = moeda === "USD" && cotacaoUSD
+    ? totalMoeda * cotacaoUSD
+    : moeda === "BRL" ? totalMoeda : 0;
+  const podeConfirmar = linhasValidas.length > 0 && (moeda === "BRL" || cotacaoUSD);
+
+  function confirmar() {
+    if (!podeConfirmar) return;
+    const taxa = moeda === "USD" ? cotacaoUSD : 1;
+    // Monta os campos no formato que o pipeline existente espera (mesma
+    // saída da IA Vision): {classes:{...}, ativos:[...flat...], patrimonioTotal}.
+    const classes = {};
+    const ativos = [];
+    linhasValidas.forEach((l) => {
+      const valorBRL = Number((parseFloat(l.valor) * taxa).toFixed(2));
+      classes[l.classe] = Number(((classes[l.classe] || 0) + valorBRL).toFixed(2));
+      ativos.push({
+        nome: l.nome.trim(),
+        classe: l.classe,
+        valor: valorBRL,
+        rentMes: l.rentMes ? parseFloat(String(l.rentMes).replace(",", ".")) : null,
+        rentAno: null,
+        vencimento: "",
+      });
+    });
+    const dados = {
+      mesReferencia: mesRef,
+      dataReferencia: `${mesRef}-${String(hoje.getDate()).padStart(2, "0")}`,
+      patrimonioTotal: Number(totalBRL.toFixed(2)),
+      classes,
+      ativos,
+      movimentacoes: [],
+      resumoMes: {},
+      _mesReferencia: mesRef,
+      _moedaOriginal: moeda,
+      _cotacaoUsadaUSD: moeda === "USD" ? cotacaoUSD : null,
+    };
+    onConfirm(dados, mesRef);
+  }
+
+  const labels = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0, background: "rgba(0,0,0,0.78)", zIndex: 650,
+      display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
+      backdropFilter: "blur(8px)", overflowY: "auto",
+    }}>
+      <div style={{
+        background: T.bgCard, border: "0.5px solid rgba(240,162,2,0.35)",
+        borderRadius: T.radiusLg, padding: "26px 26px 22px",
+        width: 720, maxWidth: "100%", maxHeight: "92vh", overflowY: "auto",
+      }}>
+        <div style={{ fontSize: 10, color: T.gold, textTransform: "uppercase", letterSpacing: "0.14em", marginBottom: 6, ...noSel }}>
+          Entrada manual
+        </div>
+        <div style={{ fontSize: 18, fontWeight: 300, color: T.textPrimary, marginBottom: 4, ...noSel }}>
+          Preenchimento manual da carteira
+        </div>
+        <div style={{ fontSize: 12, color: T.textSecondary, lineHeight: 1.6, marginBottom: 18, ...noSel }}>
+          Olhe o extrato/imagem do cliente e digite os ativos um a um. Funciona quando a IA está fora do ar.
+        </div>
+
+        {/* Mês + Moeda */}
+        <div style={{ display: "flex", gap: 12, marginBottom: 14, flexWrap: "wrap" }}>
+          <div style={{ flex: 1, minWidth: 180 }}>
+            <label style={{ fontSize: 10, color: T.textMuted, letterSpacing: "0.12em", textTransform: "uppercase", display: "block", marginBottom: 6, ...noSel }}>
+              Mês de referência
+            </label>
+            <input type="month" value={mesRef} onChange={(e) => setMesRef(e.target.value)}
+              style={{ width: "100%", ...C.input, fontSize: 14, padding: "10px 12px", colorScheme: "dark" }} />
+            <div style={{ fontSize: 11, color: T.textMuted, marginTop: 4, ...noSel }}>
+              {labels[parseInt(mesRef.slice(5, 7)) - 1]} de {mesRef.slice(0, 4)}
+            </div>
+          </div>
+          <div style={{ flex: 1, minWidth: 180 }}>
+            <label style={{ fontSize: 10, color: T.textMuted, letterSpacing: "0.12em", textTransform: "uppercase", display: "block", marginBottom: 6, ...noSel }}>
+              Moeda dos valores
+            </label>
+            <div style={{ display: "flex", gap: 8 }}>
+              {["BRL", "USD"].map((m) => (
+                <button key={m} onClick={() => setMoeda(m)}
+                  style={{
+                    flex: 1, padding: 10, fontSize: 12, cursor: "pointer", fontFamily: T.fontFamily,
+                    background: moeda === m ? "rgba(240,162,2,0.15)" : "rgba(255,255,255,0.04)",
+                    border: `0.5px solid ${moeda === m ? T.goldBorder : T.border}`,
+                    borderRadius: T.radiusSm,
+                    color: moeda === m ? T.gold : T.textSecondary,
+                  }}>
+                  {m}
+                </button>
+              ))}
+            </div>
+            {moeda === "USD" && (
+              <div style={{ fontSize: 11, color: cotacaoUSD ? T.textMuted : T.danger, marginTop: 4, ...noSel }}>
+                {cotacaoUSD
+                  ? `Cotação atual: R$ ${cotacaoUSD.toFixed(4)} (vai converter pra reais)`
+                  : "⚠ Cotação não disponível — abra /dashboard pra atualizar"}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Tabela de linhas */}
+        <div style={{ marginBottom: 14, border: `0.5px solid ${T.border}`, borderRadius: 10, overflow: "hidden" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 160px 130px 90px 36px", gap: 0, background: "rgba(255,255,255,0.03)" }}>
+            {["Ativo", "Classe", `Valor (${moeda})`, "Rent. mês %", ""].map((h, i) => (
+              <div key={i} style={{ padding: "10px 10px", fontSize: 9, color: T.textMuted, textTransform: "uppercase", letterSpacing: "0.12em", ...noSel }}>
+                {h}
+              </div>
+            ))}
+          </div>
+          {linhas.map((l) => (
+            <div key={l.id} style={{
+              display: "grid", gridTemplateColumns: "1fr 160px 130px 90px 36px",
+              gap: 0, borderTop: `0.5px solid ${T.border}`, alignItems: "center",
+            }}>
+              <input value={l.nome} onChange={(e) => updLinha(l.id, "nome", e.target.value)}
+                placeholder="Ex.: VOO – Vanguard S&P 500"
+                style={{ background: "transparent", border: "none", padding: "10px 10px", fontSize: 13, color: T.textPrimary, fontFamily: T.fontFamily, outline: "none" }} />
+              <select value={l.classe} onChange={(e) => updLinha(l.id, "classe", e.target.value)}
+                style={{ background: "transparent", border: "none", padding: "10px 10px", fontSize: 12, color: T.textSecondary, fontFamily: T.fontFamily, outline: "none", cursor: "pointer" }}>
+                {CLASSES.map((c) => (
+                  <option key={c.key} value={c.key} style={{ background: T.bgCard }}>{c.label}</option>
+                ))}
+              </select>
+              <input value={l.valor} onChange={(e) => updLinha(l.id, "valor", e.target.value.replace(/[^0-9.,]/g, "").replace(",", "."))}
+                placeholder="0.00" inputMode="decimal"
+                style={{ background: "transparent", border: "none", padding: "10px 10px", fontSize: 13, color: T.textPrimary, fontFamily: T.fontFamily, outline: "none", textAlign: "right" }} />
+              <input value={l.rentMes} onChange={(e) => updLinha(l.id, "rentMes", e.target.value.replace(/[^0-9.,\-]/g, "").replace(",", "."))}
+                placeholder="—" inputMode="decimal"
+                style={{ background: "transparent", border: "none", padding: "10px 10px", fontSize: 12, color: T.textPrimary, fontFamily: T.fontFamily, outline: "none", textAlign: "right" }} />
+              <button onClick={() => removeLinha(l.id)} disabled={linhas.length === 1}
+                style={{ background: "transparent", border: "none", color: T.textMuted, fontSize: 16, cursor: linhas.length === 1 ? "not-allowed" : "pointer", opacity: linhas.length === 1 ? 0.3 : 1 }}>
+                ×
+              </button>
+            </div>
+          ))}
+          <button onClick={addLinha}
+            style={{
+              width: "100%", padding: 10, background: "rgba(240,162,2,0.06)", border: "none",
+              borderTop: `0.5px solid ${T.border}`, color: T.gold, fontSize: 11, cursor: "pointer",
+              fontFamily: T.fontFamily, letterSpacing: "0.12em", textTransform: "uppercase",
+            }}>
+            ＋ Adicionar ativo
+          </button>
+        </div>
+
+        {/* Resumo */}
+        <div style={{
+          display: "flex", justifyContent: "space-between", alignItems: "center",
+          padding: "12px 14px", marginBottom: 16,
+          background: "rgba(240,162,2,0.05)", border: `0.5px solid ${T.goldBorder}`, borderRadius: 10,
+        }}>
+          <div>
+            <div style={{ fontSize: 10, color: T.textMuted, letterSpacing: "0.1em", textTransform: "uppercase", ...noSel }}>
+              Total · {linhasValidas.length} ativo{linhasValidas.length === 1 ? "" : "s"}
+            </div>
+            <div style={{ fontSize: 18, color: T.gold, fontWeight: 500, marginTop: 2 }}>
+              {moeda === "USD" ? `US$ ${totalMoeda.toFixed(2)}` : brl(totalMoeda)}
+            </div>
+          </div>
+          {moeda === "USD" && cotacaoUSD && (
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontSize: 10, color: T.textMuted, letterSpacing: "0.1em", textTransform: "uppercase", ...noSel }}>
+                Em reais
+              </div>
+              <div style={{ fontSize: 18, color: T.textPrimary, fontWeight: 500, marginTop: 2 }}>
+                {brl(totalBRL)}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div style={{ display: "flex", gap: 10 }}>
+          <button onClick={onClose}
+            style={{
+              flex: 1, padding: 12, background: "rgba(255,255,255,0.04)",
+              border: `0.5px solid ${T.border}`, borderRadius: T.radiusSm,
+              color: T.textSecondary, fontSize: 11, cursor: "pointer",
+              fontFamily: T.fontFamily, letterSpacing: "0.1em", textTransform: "uppercase",
+            }}>
+            Cancelar
+          </button>
+          <button onClick={confirmar} disabled={!podeConfirmar}
+            style={{
+              flex: 2, padding: 12, background: "rgba(240,162,2,0.18)",
+              border: "0.5px solid rgba(240,162,2,0.45)", borderRadius: T.radiusSm,
+              color: T.gold, fontSize: 12, cursor: podeConfirmar ? "pointer" : "not-allowed",
+              fontFamily: T.fontFamily, letterSpacing: "0.12em", textTransform: "uppercase", fontWeight: 500,
+              opacity: podeConfirmar ? 1 : 0.5,
+            }}>
+            Continuar e vincular ao mês →
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ResumoLinha({ label, val, cor }) {
   return (
     <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, ...noSel }}>
@@ -3610,7 +3867,7 @@ function MetaRow({ label, val, cor }) {
 // ══════════════════════════════════════════════════════════════
 // UPLOAD OVERLAY
 // ══════════════════════════════════════════════════════════════
-function UploadOverlay({ progress, onClose }) {
+function UploadOverlay({ progress, onClose, onAbrirManual }) {
   const done = progress.pct >= 100 && !progress.error;
   return (
     <div style={{
@@ -3645,6 +3902,19 @@ function UploadOverlay({ progress, onClose }) {
           }}>
             <div style={{ fontSize: 11, color: T.danger, lineHeight: 1.6 }}>{progress.errorDetail}</div>
           </div>
+        )}
+        {progress.error && onAbrirManual && (
+          <button
+            onClick={onAbrirManual}
+            style={{
+              width: "100%", padding: 11, marginBottom: 8,
+              background: "rgba(240,162,2,0.18)", border: "0.5px solid rgba(240,162,2,0.45)",
+              borderRadius: T.radiusSm, color: T.gold, fontSize: 11, cursor: "pointer",
+              fontFamily: T.fontFamily, letterSpacing: "0.12em", textTransform: "uppercase", fontWeight: 500,
+            }}
+          >
+            Inserir manualmente
+          </button>
         )}
         {(progress.pct >= 100 || progress.error) && (
           <button onClick={onClose} style={{

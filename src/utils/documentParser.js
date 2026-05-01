@@ -16,12 +16,19 @@ async function getPdfjs() {
 const dbg = import.meta.env.DEV ? console.log.bind(console) : () => {};
 
 // ── Tesseract worker reutilizável (evita recriar worker a cada página) ─
+// Usa arquivos LOCAIS de /public/tesseract pra evitar dependência de CDN
+// (CSP-safe, funciona offline depois do primeiro carregamento). Apenas
+// 'eng' carregado por padrão — bate bem com extratos tabulares em USD/PT
+// e mantém o bundle do lang em ~1.6MB.
 let _tesseractWorker = null;
 let _TesseractMod = null;
 async function getWorker(onLog) {
   if (_tesseractWorker) return _tesseractWorker;
   if (!_TesseractMod) _TesseractMod = (await import("tesseract.js")).default;
-  _tesseractWorker = await _TesseractMod.createWorker(["por", "eng"], 1, {
+  _tesseractWorker = await _TesseractMod.createWorker(["eng"], 1, {
+    workerPath: "/tesseract/worker.min.js",
+    corePath: "/tesseract/tesseract-core-simd-lstm.wasm.js",
+    langPath: "/tesseract",
     logger: onLog,
   });
   return _tesseractWorker;
