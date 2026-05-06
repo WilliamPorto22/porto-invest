@@ -397,34 +397,3 @@
   }
 }
 
-/* ────────────────────────────────────────────────────────────────
-   STATE PLACEHOLDER (uso interno em telas vazias)
-   ──────────────────────────────────────────────────────────────── */
-.ui-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: var(--spacing-3xl) var(--spacing-lg);
-  gap: var(--spacing-md);
-}
-
-.ui-empty-icon {
-  font-size: 40px;
-  opacity: 0.55;
-}
-
-.ui-empty-title {
-  font-size: var(--text-xl);
-  font-weight: var(--weight-medium);
-  color: var(--text-primary);
-  margin: 0;
-}
-
-.ui-empty-desc {
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
-  max-width: 480px;
-  line-height: var(--leading-relaxed);
-}

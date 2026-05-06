@@ -194,17 +194,6 @@ html, body {
   overflow-x: hidden;
 }
 
-/* Tabelas e grids dentro do app: garantem scroll interno em vez de
-   estourar a tela. Qualquer elemento com .table-scroll ou .x-scroll ganha
-   overflow-x auto e reset de wrap. */
-.table-scroll,
-.x-scroll {
-  width: 100%;
-  max-width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
 /* Children de grids nomeados nunca podem exceder a coluna */
 .grid-kpi > *,
 .grid-clients > *,
@@ -242,9 +231,5 @@ html, body {
   body {
     background: white;
     color: black;
-  }
-
-  .no-print {
-    display: none;
   }
 }

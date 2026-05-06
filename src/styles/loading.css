@@ -122,19 +122,6 @@
   to { transform: translateX(100%); }
 }
 
-/* Variante "linha" — texto/título */
-.pi-skeleton-line {
-  display: block;
-  height: 14px;
-  margin: 6px 0;
-  border-radius: 6px;
-}
-
-/* Variante "circle" — avatar/ícone */
-.pi-skeleton-circle {
-  border-radius: 50% !important;
-}
-
 /* ────────────────────────────────────────────────────────────────
    Compatibilidade — sobrescreve "carregando..." plain antigo
    por loading screen moderna globalmente.

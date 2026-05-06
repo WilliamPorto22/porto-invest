@@ -541,24 +541,6 @@
   }
 }
 
-/* Encolhe/oculta texto do logo em telas pequenas para garantir espaço
-   aos botões de ação (evita "botão sumindo" no canto direito). */
-@media (max-width: 480px) {
-  .navbar-brand .logo-navbar-container span {
-    font-size: 12px !important;
-    max-width: 110px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-}
-
-@media (max-width: 360px) {
-  .navbar-brand .logo-navbar-container span {
-    display: none !important;
-  }
-}
-
 /* Animação de carregamento */
 @keyframes fadeIn {
   from {

@@ -196,14 +196,6 @@
   flex-shrink: 0;
 }
 
-.pi-bell-empty {
-  padding: 30px 18px;
-  text-align: center;
-  font-size: 12px;
-  color: #748CAB;
-  letter-spacing: 0.02em;
-}
-
 /* Mobile */
 @media (max-width: 599px) {
   .pi-bell-panel {
