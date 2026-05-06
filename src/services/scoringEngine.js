@@ -195,10 +195,6 @@ export function pontuarAtivo(ativo, classe) {
   // Regra única: só marca venda se score < 50 (faixa Fraca ou Evitar).
   // Empresas com score >= 50 podem ter pontos negativos isolados, mas no agregado
   // o ativo ainda não justifica recomendação de saída — fica como neutro.
-  const valuationAlto =
-    (ativo.pl != null && ativo.pl > 25) ||
-    (ativo.pvp != null && ativo.pvp > 3) ||
-    (ativo.dy != null && ativo.dy < 1.5);
   const compraTopo = mom.posicao != null && mom.posicao > 0.9;
   const quedaForte = ativo.variacaoAno != null && ativo.variacaoAno < -15;
   const sinalVenda = score < 50;

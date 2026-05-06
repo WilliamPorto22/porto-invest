@@ -148,6 +148,18 @@ function PerfilCard({ perfil, ativo }) {
   );
 }
 
+// Botão de WhatsApp reutilizável — declarado fora do componente para não ser
+// recriado a cada render (preserva estado/identidade do nó).
+function BotaoWhats({ whatsAppLink, mensagem, classe = "primary", children }) {
+  const url = whatsAppLink(mensagem);
+  if (!url) return null;
+  return (
+    <a className={`ma-acao-btn ${classe}`} href={url} target="_blank" rel="noopener noreferrer">
+      {children}
+    </a>
+  );
+}
+
 // ─── Componente principal ─────────────────────────────────────────────────────
 // Pode ser renderizado em 2 contextos:
 //  - cliente final em /minha-alocacao → lê profile.clienteId.
@@ -449,17 +461,6 @@ export default function MinhaAlocacao({ clienteIdOverride = null, mostrarVoltar 
     );
   }
 
-  // Botão de WhatsApp reutilizável — só renderiza se houver telefone do assessor
-  const BotaoWhats = ({ mensagem, classe = "primary", children }) => {
-    const url = whatsAppLink(mensagem);
-    if (!url) return null;
-    return (
-      <a className={`ma-acao-btn ${classe}`} href={url} target="_blank" rel="noopener noreferrer">
-        {children}
-      </a>
-    );
-  };
-
   return (
     <div className="dashboard-container has-sidebar">
       <Sidebar mode="cliente" clienteId={clienteId} clienteNome={cliente?.nome} />
@@ -493,7 +494,7 @@ export default function MinhaAlocacao({ clienteIdOverride = null, mostrarVoltar 
               <div className="ma-reserva-bar">
                 <div className="ma-reserva-bar-fill" style={{ width: `${Math.min(100, reserva.pctCobertura)}%` }} />
               </div>
-              <BotaoWhats mensagem="Quero conversar sobre a minha reserva de emergência. Vamos montar um plano para fechá-la?">
+              <BotaoWhats whatsAppLink={whatsAppLink} mensagem="Quero conversar sobre a minha reserva de emergência. Vamos montar um plano para fechá-la?">
                 Falar com {primeiroNomeAssessor} sobre a reserva
               </BotaoWhats>
             </div>
@@ -686,6 +687,7 @@ export default function MinhaAlocacao({ clienteIdOverride = null, mostrarVoltar 
 
                         <div className="ma-prio-acoes">
                           <BotaoWhats
+                            whatsAppLink={whatsAppLink}
                             mensagem={`Quero conversar sobre o ajuste de ${p.label} na minha carteira (estou ${over ? "acima" : "abaixo"} do alvo em ${Math.abs(p.delta).toFixed(1)}%).`}
                           >
                             Conversar com {primeiroNomeAssessor}
@@ -747,6 +749,7 @@ export default function MinhaAlocacao({ clienteIdOverride = null, mostrarVoltar 
                         </div>
                       )}
                       <BotaoWhats
+                        whatsAppLink={whatsAppLink}
                         classe="ghost"
                         mensagem={`Vi que ${s.ticker} está com score ${s.score}/100 na análise. Pode me explicar o que está acontecendo e se devemos avaliar uma realocação?`}
                       >
@@ -784,6 +787,7 @@ export default function MinhaAlocacao({ clienteIdOverride = null, mostrarVoltar 
                         </div>
                       )}
                       <BotaoWhats
+                        whatsAppLink={whatsAppLink}
                         classe="ghost"
                         mensagem={`${s.ticker} está com score ${s.score}/100 na análise. Faz sentido reforçar essa posição no próximo aporte?`}
                       >
@@ -803,6 +807,7 @@ export default function MinhaAlocacao({ clienteIdOverride = null, mostrarVoltar 
             <h3>Vamos ajustar juntos?</h3>
             <p>Toda decisão de alocação deve passar por uma conversa. {primeiroNomeAssessor} está disponível.</p>
             <BotaoWhats
+              whatsAppLink={whatsAppLink}
               classe="primary large"
               mensagem="Acabei de revisar minha alocação na plataforma. Podemos marcar uma conversa para alinhar os próximos passos?"
             >

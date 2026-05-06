@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
@@ -125,7 +125,7 @@ export default function ObjetivoDetalhes() {
   const [salvandoEditObj, setSalvandoEditObj] = useState(false);
   const [erroEditObj, setErroEditObj] = useState("");
 
-  async function carregarCliente() {
+  const carregarCliente = useCallback(async () => {
     try {
       const r = await lerClienteComFallback(clienteId);
       if (r.exists && r.data) {
@@ -138,23 +138,23 @@ export default function ObjetivoDetalhes() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [clienteId, objetivoIndex]);
 
   useEffect(() => {
     carregarCliente();
-  }, [clienteId, objetivoIndex]);
+  }, [carregarCliente]);
 
   // Re-busca carteira quando a aba volta ao foco (usuário retorna de Carteira)
   useEffect(() => {
     function onFocus() { carregarCliente(); }
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
-  }, [clienteId, objetivoIndex]);
+  }, [carregarCliente]);
 
   // Re-busca ao trocar para a aba Ativos (para capturar alterações feitas em Carteira)
   useEffect(() => {
     if (abaAtiva === "ativos") carregarCliente();
-  }, [abaAtiva]);
+  }, [abaAtiva, carregarCliente]);
 
   useEffect(() => {
     async function obterDados() {
@@ -166,6 +166,8 @@ export default function ObjetivoDetalhes() {
       }
     }
     obterDados();
+    // obterIPCA é uma função importada estaticamente — referência estável.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (loading) {
