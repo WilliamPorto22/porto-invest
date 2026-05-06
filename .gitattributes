@@ -1,0 +1,25 @@
+# Padroniza arquivos texto como LF no repositorio.
+# Resolve o aviso "LF will be replaced by CRLF" que aparece no Windows
+# toda vez que git toca em um arquivo. O Vite/Firebase Hosting roda em
+# Linux (LF), entao manter LF no repo evita confusao em deploy.
+#
+# Forma leve: aplica para arquivos NOVOS ou EDITADOS daqui pra frente.
+# Arquivos pre-existentes mantem o que ja tem ate serem editados.
+
+* text=auto eol=lf
+
+# Binarios — git nao tenta diffar nem converter.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.webp binary
+*.ico  binary
+*.pdf  binary
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.eot   binary
+*.otf   binary
+*.zip   binary
+*.gz    binary
