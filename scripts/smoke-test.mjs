@@ -24,7 +24,7 @@ import { chromium } from "playwright-core";
 // Parse args
 const args = process.argv.slice(2);
 const baseFromArg = args.find(a => !a.startsWith("--") && a.startsWith("http"));
-const URL_BASE = baseFromArg || "https://porto-invest.web.app";
+const URL_BASE = baseFromArg || "https://porto-invest-login.web.app";
 
 // Rotas pra testar — padrão é só "/" mas pode passar mais via --route=
 const routesArg = args.filter(a => a.startsWith("--route=")).map(a => a.slice(8));

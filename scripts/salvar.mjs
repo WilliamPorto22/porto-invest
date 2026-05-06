@@ -99,12 +99,12 @@ if (!skipDeploy) {
   n++;
   passo(n, totalPassos, "Subindo para o Firebase Hosting");
   rodar("firebase deploy --only hosting");
-  console.log(cor.verde("  ✓ Site no ar: https://porto-invest.web.app"));
+  console.log(cor.verde("  ✓ Site no ar: https://porto-invest-login.web.app"));
 }
 
 // ── Fim ────────────────────────────────────────────────────────────────────
 console.log("");
 console.log(cor.verde(cor.negrito("━━━ TUDO SALVO ━━━")));
-if (!skipDeploy) console.log(cor.verde("  🌐 Site:    https://porto-invest.web.app"));
+if (!skipDeploy) console.log(cor.verde("  🌐 Site:    https://porto-invest-login.web.app"));
 if (remote)      console.log(cor.verde(`  📦 GitHub: ${remote}`));
 console.log("");

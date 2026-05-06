@@ -9,7 +9,7 @@
   },
   "hosting": [
     {
-      "site": "porto-invest",
+      "site": "porto-invest-login",
       "public": "dist",
       "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
       "rewrites": [{ "source": "**", "destination": "/index.html" }],
@@ -22,23 +22,13 @@
             { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
             { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=(), browsing-topics=()" },
             { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains" },
-            { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://www.gstatic.com https://www.googleapis.com https://s3.tradingview.com https://*.tradingview.com https://cdn.jsdelivr.net https://unpkg.com https://tessdata.projectnaptha.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob:; worker-src 'self' blob: https://cdn.jsdelivr.net https://unpkg.com; connect-src 'self' https: wss: blob:; frame-src 'self' https://porto-invest.firebaseapp.com https://porto-invest.web.app https://william-porto.firebaseapp.com https://william-porto.web.app https://*.tradingview.com https://s.tradingview.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'" }
+            { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://www.gstatic.com https://www.googleapis.com https://s3.tradingview.com https://*.tradingview.com https://cdn.jsdelivr.net https://unpkg.com https://tessdata.projectnaptha.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob:; worker-src 'self' blob: https://cdn.jsdelivr.net https://unpkg.com; connect-src 'self' https: wss: blob:; frame-src 'self' https://william-porto.firebaseapp.com https://porto-invest-login.web.app https://*.tradingview.com https://s.tradingview.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'" }
           ]
         },
         { "source": "/index.html", "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }] },
         { "source": "/", "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }] },
         { "source": "/assets/**", "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }] },
         { "source": "**/*.@(js|css|woff2|woff|svg|png|jpg|jpeg|webp|ico)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }] }
-      ]
-    },
-    {
-      "site": "william-porto",
-      "public": "dist-redirect",
-      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-      "rewrites": [{ "source": "**", "destination": "/index.html" }],
-      "headers": [
-        { "source": "/index.html", "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }] },
-        { "source": "/", "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }] }
       ]
     }
   ]

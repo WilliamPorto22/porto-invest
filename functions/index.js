@@ -2175,8 +2175,8 @@ exports.notificarAportesAtrasados = onSchedule(
           webpush: {
             fcmOptions: { link: '/' },
             notification: {
-              icon:  'https://porto-invest.web.app/pwa-192.png',
-              badge: 'https://porto-invest.web.app/favicon-32.png',
+              icon:  'https://porto-invest-login.web.app/pwa-192.png',
+              badge: 'https://porto-invest-login.web.app/favicon-32.png',
               requireInteraction: false,
               vibrate: [200, 100, 200],
             },
