@@ -1,16 +1,52 @@
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../hooks/useAuth";
 
 /**
  * ChecklistOnboardingCliente — bloco de boas-vindas para perfil incompleto.
  *
- * Aparece no topo da MeHome enquanto o cliente não cumpre os 5 critérios
- * de perfilCompleto(). Cada item é clicável e leva pra rota de preenchimento.
+ * Aparece no topo da MeHome (cliente final) ou do ClientePainel (assessor
+ * vendo o cliente) enquanto o perfil não cumpre os 5 critérios de
+ * perfilCompleto(). Cada item é clicável e leva pra rota de preenchimento
+ * — e a rota muda conforme o contexto:
+ *
+ *   • Cliente final (logado como `cliente`)  → /me/objetivos, /me/fluxo, /me/carteira
+ *   • Assessor/master vendo o cliente        → /cliente/:id/objetivos etc.
+ *
+ * O bug anterior usava sempre /me/*, e o MeRedirect chuta o assessor pra
+ * /dashboard quando role !== "cliente" — o resultado era o assessor sair
+ * da tela do cliente sem motivo. O cadastro pessoal sempre vai pra ficha
+ * em edit mode (`/cliente/:id?edit=1`), funciona pros dois.
  *
  * Quando todos os itens estão feitos, o componente não é renderizado
- * (controle fica em MeHome via status.completo).
+ * (controle fica em PainelClienteShared via status.completo).
  */
-export default function ChecklistOnboardingCliente({ status, primeiroNome }) {
+function rotaParaItem(itemKey, { clienteId, isCliente }) {
+  // Cadastro pessoal: ficha em modo edição funciona pros dois contextos.
+  if (itemKey === "cadastro") return `/cliente/${clienteId}?edit=1`;
+
+  if (isCliente) {
+    switch (itemKey) {
+      case "objetivo": return "/me/objetivos";
+      case "receita":  return "/me/fluxo";
+      case "despesa":  return "/me/fluxo";
+      case "carteira": return "/me/carteira";
+      default:         return "/me/home";
+    }
+  }
+
+  // Assessor / master vendo o cliente — sempre rotas absolutas com :id.
+  switch (itemKey) {
+    case "objetivo": return `/cliente/${clienteId}/objetivos`;
+    case "receita":  return `/cliente/${clienteId}/fluxo`;
+    case "despesa":  return `/cliente/${clienteId}/fluxo`;
+    case "carteira": return `/cliente/${clienteId}/carteira`;
+    default:         return `/cliente/${clienteId}/painel`;
+  }
+}
+
+export default function ChecklistOnboardingCliente({ status, primeiroNome, clienteId }) {
   const navigate = useNavigate();
+  const { isCliente } = useAuth();
   const pct = Math.round((status.feitos / status.total) * 100);
 
   return (
@@ -75,7 +111,11 @@ export default function ChecklistOnboardingCliente({ status, primeiroNome }) {
         {status.itens.map(item => (
           <button
             key={item.key}
-            onClick={() => !item.feito && navigate(item.rota)}
+            onClick={() => {
+              if (item.feito) return;
+              const rota = rotaParaItem(item.key, { clienteId, isCliente });
+              navigate(rota);
+            }}
             disabled={item.feito}
             style={{
               display: "flex",

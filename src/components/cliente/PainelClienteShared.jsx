@@ -29,6 +29,7 @@ export default function PainelClienteShared({ cliente, clienteId, snapshots = []
         <ChecklistOnboardingCliente
           status={status}
           primeiroNome={primeiroNome}
+          clienteId={clienteId}
         />
       )}
       <HomeLiberdade cliente={cliente} clienteId={clienteId} snapshots={snapshots} />
