@@ -55,7 +55,7 @@ const TITULO = {
   marginBottom: 14,
 };
 
-export default function ResumoPatrimonialCliente({ cliente, snapshots = [] }) {
+export default function ResumoPatrimonialCliente({ cliente, snapshots = [], ocultarLiquidez = false }) {
   const dados = useMemo(() => {
     if (!cliente) return null;
     const carteira = cliente.carteira || {};
@@ -314,6 +314,11 @@ export default function ResumoPatrimonialCliente({ cliente, snapshots = [] }) {
       )}
 
       {/* ── LINHA 3: Liquidez ───────────────────────────────────── */}
+      {/* No painel principal (HomeLiberdade) já existe um par de
+          mini-cards de Liquidez/Total no topo — escondemos esta linha
+          via `ocultarLiquidez` para não duplicar a informação. A página
+          dedicada `/me/resumo` continua mostrando o bloco completo. */}
+      {!ocultarLiquidez && (
       <div style={{ ...CARD, marginBottom: 14 }}>
         <div style={TITULO}>Liquidez da Carteira</div>
         <div className="resumo-liquidez-grid" style={{
@@ -357,6 +362,7 @@ export default function ResumoPatrimonialCliente({ cliente, snapshots = [] }) {
           </div>
         </div>
       </div>
+      )}
 
       {/* ── LINHA 4: Patrimônio Financeiro + Bens Cadastrados ──── */}
       <div style={{ ...CARD }}>

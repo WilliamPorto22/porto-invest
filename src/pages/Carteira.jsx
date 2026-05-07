@@ -1,4 +1,4 @@
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useEffect, useMemo, useRef, useState, useCallback, memo } from "react";
 import { doc, setDoc } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
@@ -10,7 +10,7 @@ import { Sidebar } from "../components/Sidebar";
 import { useAuth } from "../hooks/useAuth";
 import { T, C } from "../theme";
 // documentParser traz pdfjs + tesseract (~450KB). Carregado sob demanda no upload.
-import { OBJETIVO_LABELS, garantirObjetivosVinculados } from "../utils/ativos";
+import { OBJETIVO_LABELS, garantirObjetivosVinculados, listarAtivosCarteira } from "../utils/ativos";
 import { AvatarIcon } from "./Dashboard";
 import DonutChartModern from "../components/DonutChartModern";
 import HistoricoMensalChart from "../components/HistoricoMensalChart";
@@ -233,7 +233,17 @@ function Select({ value, onChange, options, placeholder = "—" }) {
 export default function Carteira() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { isCliente, profile, user } = useAuth();
+
+  // Query params vindos da Home do cliente (CardLiquidezTopo):
+  //   ?relatorio=ultimo   → abre o snapshot mensal mais recente automaticamente
+  //   ?destacar=liquidez  → renderiza um banner com os ativos vinculados a "Liquidez"
+  // Ambos são consumidos por useEffects abaixo e limpos da URL após uso para
+  // não disparar de novo num back/refresh da página.
+  const paramRelatorio = searchParams.get("relatorio");
+  const paramDestacar = searchParams.get("destacar");
+  const autoOpenSnapDoneRef = useRef(false);
 
   // Cliente só pode ver a própria carteira — redireciona se URL for de outro id.
   useEffect(() => {
@@ -460,6 +470,28 @@ export default function Carteira() {
     })();
     return () => { alive = false; };
   }, [id, retryKey, recarregarSnaps, clienteDoc]);
+
+  // Auto-abre o snapshot mensal mais recente quando o cliente chegou via
+  // "Total investido" da home (?relatorio=ultimo). Só dispara uma vez por
+  // visita e só se já houver snapshots carregados.
+  useEffect(() => {
+    if (paramRelatorio !== "ultimo") return;
+    if (autoOpenSnapDoneRef.current) return;
+    if (!Array.isArray(snapshots) || snapshots.length === 0) return;
+    // listarSnapshots retorna ordenado descendente por mesRef — pegamos o 1º.
+    // Defensivamente reordenamos para garantir o mais recente.
+    const maisRecente = [...snapshots].sort((a, b) =>
+      String(b.mesRef).localeCompare(String(a.mesRef))
+    )[0];
+    if (maisRecente) {
+      setSnapshotAberto(maisRecente);
+      autoOpenSnapDoneRef.current = true;
+      // Remove o param da URL para não reabrir num refresh.
+      const next = new URLSearchParams(searchParams);
+      next.delete("relatorio");
+      setSearchParams(next, { replace: true });
+    }
+  }, [paramRelatorio, snapshots, searchParams, setSearchParams]);
 
   // Apaga snapshot específico (com confirmação) — usado quando o usuário
   // importou o mês errado ou quer reimportar do zero.
@@ -1823,6 +1855,21 @@ export default function Carteira() {
             {msg}
             <button onClick={() => setMsg("")} style={{ background: "none", border: "none", color: "inherit", cursor: "pointer", fontSize: 16 }}>×</button>
           </div>
+        )}
+
+        {/* ── DESTAQUE: LIQUIDEZ (vindo de ?destacar=liquidez na home) ──
+              Lista os ativos da carteira que o cliente vinculou ao objetivo
+              "Liquidez" — mesma fonte do CardLiquidezTopo na home. Aparece
+              só enquanto o param está na URL; o botão "Limpar" remove. */}
+        {paramDestacar === "liquidez" && (
+          <BannerDestaqueLiquidez
+            carteira={snap}
+            onLimpar={() => {
+              const next = new URLSearchParams(searchParams);
+              next.delete("destacar");
+              setSearchParams(next, { replace: true });
+            }}
+          />
         )}
 
         {/* ── HISTÓRICO MENSAL DE SNAPSHOTS (movido pra cima do Composição
@@ -3932,6 +3979,120 @@ function UploadOverlay({ progress, onClose, onAbrirManual }) {
 // ══════════════════════════════════════════════════════════════
 // SNAPSHOT VIEWER — visualização somente-leitura de um mês passado
 // ══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════
+// BannerDestaqueLiquidez
+// Renderizado quando a Carteira é aberta com `?destacar=liquidez`
+// (vindo do CardLiquidezTopo da home). Lista somente os ativos que
+// o cliente VINCULOU explicitamente ao objetivo "Liquidez" e mostra
+// o total + % da carteira. Não filtra o resto da página — apenas
+// destaca: o cliente continua vendo a Composição completa abaixo.
+// ══════════════════════════════════════════════════════════════
+function BannerDestaqueLiquidez({ carteira, onLimpar }) {
+  const ativos = listarAtivosCarteira(carteira || {});
+  const liquidos = ativos.filter((a) => (a.objetivo || "") === "Liquidez");
+  const totalCart = ativos.reduce((acc, a) => acc + (a.valorReais || 0), 0);
+  const totalLiq = liquidos.reduce((acc, a) => acc + (a.valorReais || 0), 0);
+  const pct = totalCart > 0 ? Math.round((totalLiq / totalCart) * 100) : 0;
+
+  const cor = "#22c55e";
+  return (
+    <div style={{
+      position: "relative",
+      borderRadius: T.radiusLg,
+      padding: "18px 20px",
+      marginBottom: 18,
+      background: "linear-gradient(160deg, rgba(34,197,94,0.10) 0%, rgba(13,19,33,0.55) 100%)",
+      border: `1px solid rgba(34,197,94,0.30)`,
+      boxShadow: "0 4px 24px rgba(34,197,94,0.10)",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 12, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: 10,
+            background: "rgba(34,197,94,0.16)",
+            border: "1px solid rgba(34,197,94,0.30)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 18,
+          }}>💧</div>
+          <div>
+            <div style={{ fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase", color: cor, fontWeight: 600 }}>
+              Destaque: Liquidez
+            </div>
+            <div style={{ fontSize: 13, color: T.textPrimary, marginTop: 2 }}>
+              {liquidos.length > 0
+                ? `${liquidos.length} ${liquidos.length === 1 ? "ativo vinculado" : "ativos vinculados"} · ${brl(totalLiq)} · ${pct}% da carteira`
+                : "Nenhum ativo vinculado ao objetivo Liquidez ainda."}
+            </div>
+          </div>
+        </div>
+        <button
+          onClick={onLimpar}
+          style={{
+            background: "transparent",
+            border: `0.5px solid ${T.border}`,
+            color: T.textMuted,
+            fontSize: 11,
+            padding: "8px 12px",
+            borderRadius: T.radiusSm,
+            cursor: "pointer",
+            letterSpacing: "0.10em",
+            textTransform: "uppercase",
+            fontWeight: 500,
+            fontFamily: T.fontFamily,
+          }}
+          title="Voltar a ver toda a carteira sem destaque"
+        >
+          Limpar destaque
+        </button>
+      </div>
+
+      {liquidos.length === 0 ? (
+        <div style={{
+          padding: "12px 14px",
+          background: "rgba(255,255,255,0.03)",
+          border: `0.5px dashed ${T.border}`,
+          borderRadius: T.radiusSm,
+          fontSize: 12,
+          color: T.textMuted,
+          lineHeight: 1.6,
+        }}>
+          Para um ativo aparecer aqui, abra-o na carteira abaixo e selecione
+          <strong style={{ color: T.textSecondary }}> Objetivo → Liquidez</strong>.
+          Assim ele passa a contar no card "Liquidez diária" da sua tela inicial.
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {liquidos.map((a, i) => (
+            <div key={`liq-${i}`} style={{
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+              padding: "10px 12px",
+              background: "rgba(255,255,255,0.02)",
+              border: `0.5px solid ${T.border}`,
+              borderRadius: T.radiusSm,
+              gap: 12,
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, flex: 1 }}>
+                <span style={{ width: 8, height: 8, borderRadius: "50%", background: a.classeCor || cor, flexShrink: 0 }} />
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 13, color: T.textPrimary, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {a.nome || a.descricao || a.classeLabel || "Ativo sem nome"}
+                  </div>
+                  <div style={{ fontSize: 11, color: T.textMuted, marginTop: 1 }}>
+                    {a.classeLabel}{a.liq ? ` · ${a.liq}` : ""}
+                  </div>
+                </div>
+              </div>
+              <div style={{ fontSize: 13, color: cor, fontWeight: 500, fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>
+                {brl(a.valorReais)}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function SnapshotViewerModal({ snapshot, clienteId, clienteNome, onClose, onApagar }) {
   const ativos = Array.isArray(snapshot.ativos) ? snapshot.ativos : [];
   const movs = Array.isArray(snapshot.movimentacoes) ? snapshot.movimentacoes : [];

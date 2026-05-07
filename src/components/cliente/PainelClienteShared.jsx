@@ -33,7 +33,10 @@ export default function PainelClienteShared({ cliente, clienteId, snapshots = []
       )}
       <HomeLiberdade cliente={cliente} clienteId={clienteId} snapshots={snapshots} />
       <div style={{ marginTop: 28 }}>
-        <ResumoPatrimonialCliente cliente={cliente} snapshots={snapshots} />
+        {/* Liquidez/Total já aparece no topo do HomeLiberdade (CardLiquidezTopo);
+            ocultamos a linha duplicada do ResumoPatrimonial aqui. A página
+            dedicada `/me/resumo` (MeResumo) mantém o bloco completo. */}
+        <ResumoPatrimonialCliente cliente={cliente} snapshots={snapshots} ocultarLiquidez />
       </div>
     </>
   );

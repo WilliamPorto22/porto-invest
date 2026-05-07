@@ -1,6 +1,7 @@
 import { useMemo, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { parseCentavos, brl } from "../../utils/currency";
+import { listarAtivosCarteira } from "../../utils/ativos";
 import {
   TAXA_ANUAL,
   IPCA_ANUAL,
@@ -320,6 +321,77 @@ function ToastPush({ msg, onClose }) {
   );
 }
 
+// ── CardLiquidezTopo ──────────────────────────────────────────
+// Par de mini-cards (Liquidez D+1 + Total Investido) inserido logo
+// abaixo do Hero "Sua Liberdade Financeira", para o cliente ver de
+// imediato quanto tem disponível em 1 dia (regra: SOMENTE ativos da
+// carteira que ele mesmo vinculou ao objetivo "Liquidez").
+//
+//  • Disponível em 1 dia → /cliente/:id/carteira?destacar=liquidez
+//    (Carteira foca os ativos vinculados a Liquidez)
+//  • Total investido    → /cliente/:id/carteira?relatorio=ultimo
+//    (Carteira abre o snapshot/relatório do mês mais recente)
+function CardLiquidezTopo({ cliente, clienteId }) {
+  const navigate = useNavigate();
+
+  const dados = useMemo(() => {
+    const ativos = listarAtivosCarteira(cliente?.carteira);
+    const ativosLiq = ativos.filter((a) => (a.objetivo || "") === "Liquidez");
+    const liquidez = ativosLiq.reduce((acc, a) => acc + (a.valorReais || 0), 0);
+    const total = ativos.reduce((acc, a) => acc + (a.valorReais || 0), 0);
+    return { liquidez, total, qtdLiq: ativosLiq.length };
+  }, [cliente]);
+
+  // Sem nenhuma carteira cadastrada: não mostra o card (não há nada útil).
+  if (dados.total <= 0 && dados.qtdLiq === 0) return null;
+
+  const pctLiq = dados.total > 0
+    ? Math.round((dados.liquidez / dados.total) * 100)
+    : 0;
+
+  return (
+    <div className="liberdade-liquidez-row">
+      <button
+        type="button"
+        className="liberdade-liquidez-card liquidez-verde"
+        onClick={() => navigate(`/cliente/${clienteId}/carteira?destacar=liquidez`)}
+        title="Ver os ativos da sua carteira marcados como liquidez"
+      >
+        <div className="liberdade-liquidez-eyebrow">
+          <span>Liquidez diária (D+1)</span>
+          <span className="liberdade-liquidez-arrow">→</span>
+        </div>
+        <div className="liberdade-liquidez-valor verde">
+          {dados.qtdLiq > 0 ? brl(dados.liquidez) : "—"}
+        </div>
+        <div className="liberdade-liquidez-sub">
+          {dados.qtdLiq > 0
+            ? `${pctLiq}% da carteira · ${dados.qtdLiq} ${dados.qtdLiq === 1 ? "ativo vinculado" : "ativos vinculados"}`
+            : "Vincule ativos à Liquidez na sua carteira"}
+        </div>
+      </button>
+
+      <button
+        type="button"
+        className="liberdade-liquidez-card liquidez-ouro"
+        onClick={() => navigate(`/cliente/${clienteId}/carteira?relatorio=ultimo`)}
+        title="Ver o relatório mensal mais recente da carteira"
+      >
+        <div className="liberdade-liquidez-eyebrow">
+          <span>Total investido</span>
+          <span className="liberdade-liquidez-arrow">→</span>
+        </div>
+        <div className="liberdade-liquidez-valor ouro">
+          {brl(dados.total)}
+        </div>
+        <div className="liberdade-liquidez-sub">
+          Carteira completa · ver relatório do mês
+        </div>
+      </button>
+    </div>
+  );
+}
+
 // ── Componente principal ──────────────────────────────────────
 export default function HomeLiberdade({ cliente, clienteId, snapshots = [] }) {
   const objetivos = useMemo(() => cliente?.objetivos || [], [cliente]);
@@ -427,6 +499,8 @@ export default function HomeLiberdade({ cliente, clienteId, snapshots = [] }) {
         anosFalta={anosFalta}
         primeiroNome={primeiroNome}
       />
+
+      <CardLiquidezTopo cliente={cliente} clienteId={clienteId} />
 
       <SaudeFinanceira
         rendaMensal={rendaMensal}
