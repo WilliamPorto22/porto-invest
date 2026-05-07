@@ -1,4 +1,4 @@
-const { onCall, HttpsError } = require('firebase-functions/v2/https');
+const { onCall, onRequest, HttpsError } = require('firebase-functions/v2/https');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { defineSecret } = require('firebase-functions/params');
 const admin = require('firebase-admin');
@@ -23,6 +23,11 @@ const ANTHROPIC_API_KEY = defineSecret('ANTHROPIC_API_KEY');
 // Usado como provedor primário pra leitura de imagem/PDF de carteira,
 // já que tem free tier generoso. Anthropic permanece como fallback opcional.
 const GEMINI_API_KEY = defineSecret('GEMINI_API_KEY');
+// MERCADO_TRIGGER_KEY — chave secreta pra disparar manualmente o pipeline
+// de atualizacao do snapshot de mercado via HTTP (sem precisar de auth de
+// master). Usado pelo endpoint disparoMercadoSecreto. Setado via:
+// `firebase functions:secrets:set MERCADO_TRIGGER_KEY`
+const MERCADO_TRIGGER_KEY = defineSecret('MERCADO_TRIGGER_KEY');
 
 // IMPORTANTE: instanciamos clientes SOB DEMANDA dentro de cada função
 // (não no topo do módulo). Em Functions v2, secrets só estão disponíveis
@@ -2218,6 +2223,46 @@ exports.atualizarMercadoAgora = onCall(
   async (request) => {
     await requireRole(request, ['master']);
     return await runAtualizarMercadoSnapshot('manual');
+  }
+);
+
+// Endpoint HTTP protegido por secret — alternativa pra dispar o pipeline
+// sem precisar de auth de master via Firebase Auth (ex.: pra eu, Claude,
+// disparar direto via curl pra validar deploy ou pra voltar snapshot
+// rapidamente apos um cron falhar).
+//
+// Auth: header `x-trigger-key` deve bater com o secret MERCADO_TRIGGER_KEY
+// armazenado no Secret Manager. Sem header valido -> 401.
+//
+// Esta funcao pode ser DELETADA depois se nao for mais util — mantida no
+// codigo pra emergencias e debug.
+exports.disparoMercadoSecreto = onRequest(
+  {
+    region: 'southamerica-east1',
+    timeoutSeconds: 240,
+    memory: '512MiB',
+    secrets: [MERCADO_TRIGGER_KEY],
+  },
+  async (req, res) => {
+    if (req.method !== 'POST' && req.method !== 'GET') {
+      res.status(405).json({ error: 'method-not-allowed' });
+      return;
+    }
+    // .trim() em ambos os lados pra tolerar CR/LF/whitespace que stdin do
+    // Windows adiciona ao setar o secret via `firebase functions:secrets:set`.
+    const providedKey = (req.get('x-trigger-key') || '').trim();
+    const expectedKey = (process.env.MERCADO_TRIGGER_KEY || '').trim();
+    if (!providedKey || !expectedKey || providedKey !== expectedKey) {
+      res.status(401).json({ error: 'unauthorized' });
+      return;
+    }
+    try {
+      const result = await runAtualizarMercadoSnapshot('disparo-secret');
+      res.status(200).json(result);
+    } catch (e) {
+      console.error('[disparoMercadoSecreto] erro:', e);
+      res.status(500).json({ error: e?.message || 'erro' });
+    }
   }
 );
 
