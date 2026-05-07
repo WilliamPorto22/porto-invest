@@ -14,7 +14,8 @@ import {
   Legend,
 } from "recharts";
 import { db } from "../firebase";
-import { lerClienteComFallback, invalidarCacheCliente } from "../services/lerClienteFallback";
+import { invalidarCacheCliente } from "../services/lerClienteFallback";
+import { useCliente } from "../hooks/useCliente";
 import { Navbar } from "../components/Navbar";
 import { Sidebar } from "../components/Sidebar";
 import { T, C } from "../theme";
@@ -223,35 +224,28 @@ export default function Simulador() {
     }
   }, [isCliente, profile?.clienteId, id, navigate]);
 
-  const [cliente, setCliente] = useState(null);
+  const { cliente: clienteRaw } = useCliente(id);
+  // Anexa o id ao objeto pra preservar comportamento esperado pelos consumidores
+  // (alguns lugares usam cliente.id em vez do useParams).
+  const cliente = useMemo(
+    () => (clienteRaw ? { id, ...clienteRaw } : null),
+    [clienteRaw, id]
+  );
   const [estado, setEstado] = useState(estadoInicial);
   const [cenarios, setCenarios] = useState([]); // sessão, não persiste
   const [salvando, setSalvando] = useState(false);
   const [mostrarTabela, setMostrarTabela] = useState(false);
   const [mensagem, setMensagem] = useState(null); // { tipo: 'sucesso'|'erro', texto }
 
-  // Carrega cliente + IPCA cache (se houver)
+  // IPCA cache (mesmo mecanismo do Objetivos) — independente do cliente
   useEffect(() => {
-    let ativo = true;
-    (async () => {
-      try {
-        const r = await lerClienteComFallback(id, { isAlive: () => ativo });
-        if (!ativo || !r.exists || !r.data) return;
-        setCliente({ id, ...r.data });
-      } catch (e) {
-        console.error("Simulador: falha ao ler cliente", e);
-        return;
+    try {
+      const cache = JSON.parse(localStorage.getItem("wealthtrack_ipca") || "null");
+      if (cache?.valor) {
+        setEstado((s) => ({ ...s, ipcaAnual: parseFloat(cache.valor) }));
       }
-      // Usa IPCA em cache (mesmo mecanismo do Objetivos)
-      try {
-        const cache = JSON.parse(localStorage.getItem("wealthtrack_ipca") || "null");
-        if (cache?.valor) {
-          setEstado((s) => ({ ...s, ipcaAnual: parseFloat(cache.valor) }));
-        }
-      } catch { /* ignora */ }
-    })();
-    return () => { ativo = false; };
-  }, [id]);
+    } catch { /* ignora */ }
+  }, []);
 
   // Debounce: recalcula gráfico só quando o usuário para de mexer
   const estadoDebounced = useDebounced(estado, 200);
