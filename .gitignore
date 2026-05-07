@@ -12,6 +12,12 @@ dist
 dist-ssr
 *.local
 
+# Claude Code — settings, sessoes e worktrees temporarios (uso local)
+.claude/
+
+# Firebase — cache de deploy gerado automaticamente
+.firebase/*.cache
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
