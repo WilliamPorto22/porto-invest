@@ -1825,12 +1825,10 @@ const PHASE2_TIMEOUT_MS = 70000;  // Yahoo summary completo
 const PHASE3_TIMEOUT_MS = 25000;  // Scrapers BR (best-effort)
 const PER_REQUEST_TIMEOUT_MS = 9000;
 
-exports.buscarMercadoBR = onCall({ region: 'southamerica-east1', timeoutSeconds: 120, memory: '512MiB' }, async (request) => {
-  await requireRole(request, ['master']);
-  const tickers = Array.isArray(request.data?.tickers) ? request.data.tickers : [];
-  if (tickers.length === 0) throw new HttpsError('invalid-argument', 'tickers é obrigatório');
-  if (tickers.length > 200) throw new HttpsError('invalid-argument', 'máximo 200 tickers por chamada');
-
+// Helper interno: monta o array de ativos BR a partir dos tickers.
+// Compartilhado entre a callable buscarMercadoBR (master via UI) e os
+// schedules atualizarMercadoManha/Tarde (cron). Mesma logica, mesma saida.
+async function assembleAtivosBR(tickers) {
   const t0 = Date.now();
   const tickersYahoo = tickers.map((t) => t.includes('.') ? t : `${t}.SA`);
   const batchSize = 20;
@@ -1938,6 +1936,14 @@ exports.buscarMercadoBR = onCall({ region: 'southamerica-east1', timeoutSeconds:
 
   console.log(`[buscarMercadoBR] total ${Date.now() - t0}ms — devolvendo ${out.length} ativos`);
   return { ativos: out, total: out.length };
+}
+
+exports.buscarMercadoBR = onCall({ region: 'southamerica-east1', timeoutSeconds: 120, memory: '512MiB' }, async (request) => {
+  await requireRole(request, ['master']);
+  const tickers = Array.isArray(request.data?.tickers) ? request.data.tickers : [];
+  if (tickers.length === 0) throw new HttpsError('invalid-argument', 'tickers é obrigatório');
+  if (tickers.length > 200) throw new HttpsError('invalid-argument', 'máximo 200 tickers por chamada');
+  return await assembleAtivosBR(tickers);
 });
 
 // =========================================================================
@@ -1946,12 +1952,9 @@ exports.buscarMercadoBR = onCall({ region: 'southamerica-east1', timeoutSeconds:
 // pagos/instáveis. Roda no Cloud Functions (sem CORS). Só master autenticado.
 // Retorna { stooq: [...], yahoo: [...] } — o cliente faz o merge.
 // =========================================================================
-exports.buscarMercadoUS = onCall({ region: 'southamerica-east1', timeoutSeconds: 120, memory: '512MiB' }, async (request) => {
-  await requireRole(request, ['master']);
-  const tickers = Array.isArray(request.data?.tickers) ? request.data.tickers : [];
-  if (tickers.length === 0) throw new HttpsError('invalid-argument', 'tickers é obrigatório');
-  if (tickers.length > 200) throw new HttpsError('invalid-argument', 'máximo 200 tickers por chamada');
-
+// Helper interno: monta { stooq, yahoo } pra US. Compartilhado entre callable
+// (buscarMercadoUS) e schedules (atualizarMercadoManha/Tarde).
+async function assembleMercadoUS(tickers) {
   const TIMEOUT_MS = 12000;
 
   // Stooq: CSV em batch (1 request só)
@@ -2025,6 +2028,14 @@ exports.buscarMercadoUS = onCall({ region: 'southamerica-east1', timeoutSeconds:
   const yahoo = yahooRes.status === 'fulfilled' ? yahooRes.value : [];
 
   return { stooq, yahoo, totalStooq: stooq.length, totalYahoo: yahoo.length };
+}
+
+exports.buscarMercadoUS = onCall({ region: 'southamerica-east1', timeoutSeconds: 120, memory: '512MiB' }, async (request) => {
+  await requireRole(request, ['master']);
+  const tickers = Array.isArray(request.data?.tickers) ? request.data.tickers : [];
+  if (tickers.length === 0) throw new HttpsError('invalid-argument', 'tickers é obrigatório');
+  if (tickers.length > 200) throw new HttpsError('invalid-argument', 'máximo 200 tickers por chamada');
+  return await assembleMercadoUS(tickers);
 });
 
 function parseStooqCSV(csv) {
@@ -2122,6 +2133,93 @@ exports.listarSnapshotsCliente = onCall({ region: 'southamerica-east1' }, async 
     .orderBy('mesRef', 'desc').limit(limite).get();
   return { snapshots: snaps.docs.map(d => ({ id: d.id, ...d.data() })) };
 });
+
+// =========================================================================
+// SCHEDULED — Atualizacao automatica do snapshot de mercado
+// Antes: so o master conseguia atualizar /mercado/snapshot via UI. Quando
+// ele esquecia, ficava 8+ dias sem refresh — assessor via aviso "snapshot
+// desatualizado" em /carteiras-desalinhadas e nao tinha como pedir update.
+// Agora: 2 jobs diarios (10h e 17h Brasilia) que disparam o mesmo
+// pipeline da callable buscarMercadoBR/US e gravam direto no Firestore
+// via Admin SDK. Email do snapshot vira "schedule" pra distinguir do master.
+// =========================================================================
+async function runAtualizarMercadoSnapshot(origem) {
+  const { TICKERS_BR, TICKERS_US } = require('./mercadoTickers');
+  console.log(`[atualizarMercado:${origem}] iniciando — BR=${TICKERS_BR.length} US=${TICKERS_US.length}`);
+  const t0 = Date.now();
+
+  const [brRes, usRes] = await Promise.allSettled([
+    assembleAtivosBR(TICKERS_BR),
+    assembleMercadoUS(TICKERS_US),
+  ]);
+
+  const brAtivos = brRes.status === 'fulfilled' ? (brRes.value.ativos || []) : [];
+  const usPayload = usRes.status === 'fulfilled' ? usRes.value : { stooq: [], yahoo: [] };
+
+  // Merge stooq+yahoo igual ao client (marketData.js mergePorTicker):
+  // valores nao-null ganham; yahoo completa stooq. Aqui simplifico — concateno
+  // priorizando yahoo (que tem fundamentals).
+  const usMap = new Map();
+  for (const a of (usPayload.stooq || [])) if (a.ticker) usMap.set(a.ticker, a);
+  for (const a of (usPayload.yahoo || [])) if (a.ticker) {
+    const existente = usMap.get(a.ticker) || {};
+    usMap.set(a.ticker, { ...existente, ...a });
+  }
+  const usAtivos = [...usMap.values()];
+
+  const dt = Date.now() - t0;
+  if (brAtivos.length === 0 && usAtivos.length === 0) {
+    console.error(`[atualizarMercado:${origem}] todas as fontes falharam em ${dt}ms — snapshot NAO foi atualizado`);
+    return { ok: false, br: 0, us: 0, dt };
+  }
+
+  await admin.firestore().doc('mercado/snapshot').set({
+    br: brAtivos,
+    us: usAtivos,
+    atualizadoEm: admin.firestore.FieldValue.serverTimestamp(),
+    atualizadoPor: { fonte: 'schedule', origem, email: null, uid: null },
+  });
+
+  console.log(`[atualizarMercado:${origem}] OK em ${dt}ms — br=${brAtivos.length} us=${usAtivos.length}`);
+  return { ok: true, br: brAtivos.length, us: usAtivos.length, dt };
+}
+
+exports.atualizarMercadoManha = onSchedule(
+  {
+    schedule: 'every day 10:00',
+    timeZone: 'America/Sao_Paulo',
+    region: 'southamerica-east1',
+    timeoutSeconds: 240,
+    memory: '512MiB',
+  },
+  async () => {
+    await runAtualizarMercadoSnapshot('manha-10h');
+  }
+);
+
+exports.atualizarMercadoTarde = onSchedule(
+  {
+    schedule: 'every day 17:00',
+    timeZone: 'America/Sao_Paulo',
+    region: 'southamerica-east1',
+    timeoutSeconds: 240,
+    memory: '512MiB',
+  },
+  async () => {
+    await runAtualizarMercadoSnapshot('tarde-17h');
+  }
+);
+
+// Callable equivalente — permite o master disparar manualmente (sem esperar
+// 10h/17h) e tambem permite que eu (Claude) dispare 1x apos deploy pra
+// validar que o pipeline funciona ponta-a-ponta.
+exports.atualizarMercadoAgora = onCall(
+  { region: 'southamerica-east1', timeoutSeconds: 240, memory: '512MiB' },
+  async (request) => {
+    await requireRole(request, ['master']);
+    return await runAtualizarMercadoSnapshot('manual');
+  }
+);
 
 // =========================================================================
 // PUSH NOTIFICATIONS — Aporte atrasado
