@@ -336,7 +336,7 @@ export default function Dashboard(){
   const [assessorTmp,setAssessorTmp]=useState(null); // selecionado no passo 1 antes do tipo
   const [menuCadOpen,setMenuCadOpen]=useState(false);
   const nav=useNavigate();
-  const { user, profile, isMaster, isAssessor, isCliente } = useAuth();
+  const { user, profile, isMaster, isAssessor, isCliente, loading: authLoading } = useAuth();
   const clientesRef=useRef(null);
   const intervaloRef=useRef(null);
   const filtroRef=useRef(null);
@@ -629,6 +629,12 @@ export default function Dashboard(){
   useEffect(()=>{atualizarRef.current=atualizarCotacoesServidor;},[atualizarCotacoesServidor]);
 
   useEffect(()=>{
+    // Aguarda useAuth resolver (profile + custom claim) ANTES do primeiro fetch.
+    // Sem isso, assessor logando bate em getDocs(col) inteira pq isAssessor
+    // ainda e false no mount inicial, e o Firestore retorna permission-denied
+    // — aparecia a caixa vermelha "Nenhum cliente visivel" ate o focus event
+    // re-disparar o fetch.
+    if (authLoading || !user?.uid) return;
     atualizarRef.current(); // fetch inicial único (clientes + cotações em paralelo)
     // Poll curto (60s) que checa o mercado e só dispara cotações respeitando
     // o intervalo real (INTERVALO_ATUALIZACAO). Um único interval para ambos os casos.
@@ -649,7 +655,7 @@ export default function Dashboard(){
         intervaloRef.current=null;
       }
     };
-  },[]);
+  },[authLoading, user?.uid]);
 
   // Calcular status de cada cliente (memoizado)
   const clientesComStatus=useMemo(()=>clientes.map(c=>({
