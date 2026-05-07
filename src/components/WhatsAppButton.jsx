@@ -2,8 +2,8 @@ import { useLocation, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
-import { lerClienteComFallback } from "../services/lerClienteFallback";
 import { useAuth } from "../hooks/useAuth";
+import { useCliente } from "../hooks/useCliente";
 import { SilentBoundary } from "./SilentBoundary";
 
 /**
@@ -21,8 +21,7 @@ function WhatsAppButtonInner() {
   const { pathname } = useLocation();
   const { id } = useParams();
   const { user, profile, isCliente } = useAuth();
-  const [clienteNome, setClienteNome] = useState("");
-  const [assessor, setAssessor]       = useState(null);
+  const [assessor, setAssessor] = useState(null);
 
   // Esconde no Login e em rotas públicas
   const hide = pathname === "/" || pathname === "/reset-password";
@@ -30,26 +29,26 @@ function WhatsAppButtonInner() {
   // Resolve qual cliente estamos olhando:
   //  • Se rota /cliente/:id → :id
   //  • Senão, cai no profile.clienteId (cliente final logado)
-  const clienteId = id && id !== "novo" ? id : profile?.clienteId;
+  const clienteIdResolvido = id && id !== "novo" ? id : profile?.clienteId;
+  const clienteId = hide ? null : clienteIdResolvido;
 
-  // Carrega o cliente para descobrir advisorId + nome
+  const { cliente } = useCliente(clienteId);
+  const clienteNome = cliente?.nome || "";
+
+  // Carrega o doc do assessor a partir do advisorId/assessorId do cliente
   useEffect(() => {
-    if (hide || !clienteId) { setClienteNome(""); setAssessor(null); return; }
+    if (!cliente) { setAssessor(null); return; }
+    const advisorId = cliente.advisorId || cliente.assessorId;
+    if (!advisorId) { setAssessor(null); return; }
     let cancel = false;
-    (async () => {
-      try {
-        const r = await lerClienteComFallback(clienteId, { isAlive: () => !cancel });
-        if (cancel || !r.exists || !r.data) return;
-        setClienteNome(r.data.nome || "");
-        const advisorId = r.data.advisorId || r.data.assessorId;
-        if (!advisorId) { setAssessor(null); return; }
-        const userSnap = await getDoc(doc(db, "users", advisorId));
+    getDoc(doc(db, "users", advisorId))
+      .then((userSnap) => {
         if (cancel) return;
         if (userSnap.exists()) setAssessor(userSnap.data());
-      } catch { /* silencia */ }
-    })();
+      })
+      .catch(() => { /* silencia */ });
     return () => { cancel = true; };
-  }, [clienteId, hide]);
+  }, [cliente]);
 
   if (hide || !user) return null;
   // Só mostra para clientes (assessor/master não recebem essa pílula)
