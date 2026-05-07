@@ -14,6 +14,7 @@ import HistoricoMensalChart from "../components/HistoricoMensalChart";
 import { listarSnapshots } from "../services/snapshotsCarteira";
 import { brl as brlUtil } from "../utils/currency";
 import { useAuth } from "../hooks/useAuth";
+import { calcularDesvio, PERFIS } from "../constants/perfisInvestimento";
 
 
 // Cotações padrão (atualizadas a cada 2 horas durante horário de mercado)
@@ -691,13 +692,22 @@ export default function Dashboard(){
   },[clientesComStatus,isMaster,filtroAssessorEfetivo,filtroTipo]);
 
   // Alertas e agrupamentos derivados (memoizados para não recalcular a cada keystroke)
-  const {semAporte,semRevisao,comInviavel,comFollowUp,objDesalinhadosList,feeBasedList,porSeg,patrimonioTotal}=useMemo(()=>{
+  const {semAporte,semRevisao,comInviavel,comFollowUp,objDesalinhadosList,feeBasedList,carteirasDesalinhadas,porSeg,patrimonioTotal}=useMemo(()=>{
     const semAporte  =clientesVisiveis.filter(c=>c._sAporte==="sem_aporte");
     const semRevisao =clientesVisiveis.filter(c=>c._sRevisao==="atrasada");
     const comInviavel=clientesVisiveis.filter(c=>c._inviavel);
     const comFollowUp=clientesVisiveis.filter(c=>c._followUp);
     const objDesalinhadosList=clientesVisiveis.filter(c=>c._objDesalinhados);
     const feeBasedList=clientesVisiveis.filter(c=>c._feeBased);
+    // Carteiras desalinhadas: mesmo motor da pagina /carteiras-desalinhadas
+    // (perfil padrao "moderado" + tolerancia 5%) — conta clientes com pelo
+    // menos um bucket de alocacao fora do alvo do perfil.
+    const carteirasDesalinhadas = clientesVisiveis.filter(c => {
+      const perfilId = c.perfilInvestimento || "moderado";
+      if (!PERFIS[perfilId]) return false;
+      const r = calcularDesvio(c.carteira, perfilId, 5);
+      return r?.desalinhado === true;
+    });
     const porSeg={};
     SEGS.forEach(s=>{porSeg[s]=[];});
     clientesVisiveis.forEach(c=>{
@@ -705,7 +715,7 @@ export default function Dashboard(){
       if(porSeg[s])porSeg[s].push(c);
     });
     return{
-      semAporte,semRevisao,comInviavel,comFollowUp,objDesalinhadosList,feeBasedList,porSeg,
+      semAporte,semRevisao,comInviavel,comFollowUp,objDesalinhadosList,feeBasedList,carteirasDesalinhadas,porSeg,
       patrimonioTotal:calcularPatrimonioTotal(clientesVisiveis),
     };
   },[clientesVisiveis]);
@@ -1047,10 +1057,17 @@ export default function Dashboard(){
           <div
             className="card-xp clickable"
             onClick={()=>nav("/carteiras-desalinhadas")}
-            title="Carteiras com alertas de risco ou classes excessivas"
+            title={carteirasDesalinhadas.length > 0
+              ? `${carteirasDesalinhadas.length} cliente(s) com carteira fora do perfil — abrir página`
+              : "Todas as carteiras alinhadas ao perfil padrão (Moderado, tolerância 5%)"}
           >
             <div className="card-xp-label">Carteiras Desalinhadas</div>
-            <div className="card-xp-value">—</div>
+            <div
+              className="card-xp-value"
+              style={carteirasDesalinhadas.length > 0 ? { color: "#F0A202" } : undefined}
+            >
+              {carteirasDesalinhadas.length}
+            </div>
             <div className="card-xp-subtitle">Risco ou classe excessiva</div>
             <span className="card-xp-chip muted">abrir página</span>
           </div>
